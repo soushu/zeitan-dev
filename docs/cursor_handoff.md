@@ -138,7 +138,10 @@ zeitan-dev/
 │   │   ├── bitflyer.py      # bitFlyer
 │   │   ├── coincheck.py     # Coincheck
 │   │   ├── gmo.py           # GMOコイン
-│   │   └── bitbank.py       # bitbank
+│   │   ├── bitbank.py       # bitbank
+│   │   ├── sbivc.py         # SBI VCトレード
+│   │   ├── rakuten.py       # 楽天ウォレット
+│   │   └── linebitmax.py    # LINE BITMAX
 │   ├── calculators/         # 税金計算エンジン
 │   │   ├── __init__.py
 │   │   ├── moving_average.py  # 移動平均法
@@ -173,7 +176,7 @@ zeitan-dev/
 ```python
 {
     'timestamp': datetime,    # 取引日時
-    'exchange': str,          # 'bitflyer', 'coincheck', 'gmo', 'bitbank'
+    'exchange': str,          # 'bitflyer', 'coincheck', 'gmo', 'bitbank', 'sbivc', 'rakuten', 'linebitmax'
     'symbol': str,            # 'BTC/JPY', 'ETH/JPY'
     'type': str,              # 'buy' or 'sell'
     'amount': float,          # 取引数量
@@ -226,14 +229,21 @@ zeitan-dev/
   - Google style docstring、Python 3.12 の型ヒント（str | Path, list[TransactionFormat]）を使用
 - **src/parsers/__init__.py**: `BaseParser` と `TransactionFormat` をエクスポート（相対インポート使用）
 
+### パーサー開発（完了済み - 2026年2月15日）
+- **7取引所のパーサー実装完了**:
+  - bitFlyer, Coincheck, GMOコイン, bitbank（従来の4取引所）
+  - SBI VCトレード, 楽天ウォレット, LINE BITMAX（新規追加）
+- **全38テスト通過**（tests/test_parsers.py）
+- 各取引所のサンプルCSVファイル作成済み（tests/fixtures/）
+
 ### 未着手・変更なし
 - **src/main.py** は変更していない。画面上はタイトルとキャプションのみで、CSV アップロードや計算機能は未実装
-- 各取引所パーサー（bitflyer.py, coincheck.py, gmo.py, bitbank.py）、計算エンジン、tests は未実装
+- 計算エンジン（moving_average.py, total_average.py）は未実装
 
 ### 次の担当者がやること（推奨）
-1. **src/parsers/bitflyer.py** の実装（BaseParser を継承し、parse / validate を実装）
-2. 続いて coincheck, gmo, bitbank の各パーサー
-3. **tests/test_parsers.py** と **tests/fixtures/** にサンプル CSV を用意してユニットテスト作成
+1. **src/calculators/moving_average.py** の実装（移動平均法の計算ロジック）
+2. **src/calculators/total_average.py** の実装（総平均法の計算ロジック）
+3. **tests/test_calculators.py** でユニットテスト作成
 
 ### Git の状態（別AIでのプッシュ用）
 - **リポジトリ**: 初期化済み、ブランチ `main`
@@ -257,30 +267,35 @@ zeitan-dev/
 ### Week 1-2: CSVパーサー開発
 ```
 ✅ src/parsers/base.py: 抽象基底クラス作成（完了）
-□ src/parsers/bitflyer.py: bitFlyerパーサー
-□ src/parsers/coincheck.py: Coincheckパーサー
-□ src/parsers/gmo.py: GMOコインパーサー
-□ src/parsers/bitbank.py: bitbankパーサー
-□ tests/test_parsers.py: 全パーサーのユニットテスト
+✅ src/parsers/bitflyer.py: bitFlyerパーサー（完了）
+✅ src/parsers/coincheck.py: Coincheckパーサー（完了）
+✅ src/parsers/gmo.py: GMOコインパーサー（完了）
+✅ src/parsers/bitbank.py: bitbankパーサー（完了）
+✅ src/parsers/sbivc.py: SBI VCトレードパーサー（完了）
+✅ src/parsers/rakuten.py: 楽天ウォレットパーサー（完了）
+✅ src/parsers/linebitmax.py: LINE BITMAXパーサー（完了）
+✅ tests/test_parsers.py: 全パーサーのユニットテスト（完了・38テスト通過）
 ```
 
 ### Week 3-4: 計算エンジン
 ```
-□ src/calculators/moving_average.py: 移動平均法
-□ src/calculators/total_average.py: 総平均法
-□ tests/test_calculators.py: 計算テスト
-□ エッジケース対応（ハードフォーク、エアドロップ等）
+✅ src/calculators/moving_average.py: 移動平均法（完了）
+✅ src/calculators/total_average.py: 総平均法（完了）
+✅ tests/test_calculators.py: 計算テスト（完了・10テスト通過）
+□ エッジケース対応（ハードフォーク、エアドロップ等）← Phase 2以降
 ```
 
 ### Week 5-6: UI + レポート
 ```
-□ src/main.py: Streamlitアプリ完成
-  - CSVアップロード画面
-  - 計算方法選択（移動平均法/総平均法）
-  - 計算結果表示
-  - レポートダウンロード
-□ 確定申告用CSV出力
-□ PDFレポート生成
+✅ src/main.py: Streamlitアプリ完成（完了）
+  ✅ CSVアップロード画面（複数ファイル対応）
+  ✅ 取引所自動検出機能
+  ✅ 計算方法選択（移動平均法/総平均法）
+  ✅ 計算結果表示（総損益・取引履歴）
+  ✅ レポートダウンロード（CSV形式）
+  ✅ サマリーチャート（取引所別・通貨ペア別）
+✅ 確定申告用CSV出力（完了）
+□ PDFレポート生成 ← Phase 2以降
 ```
 
 ---

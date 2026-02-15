@@ -1,0 +1,37 @@
+# macOS
+.DS_Store
+
+# Cursor / Claude
+.claude/
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Data
+data/uploads/*
+data/reports/*
+!data/uploads/.gitkeep
+!data/reports/.gitkeep
+
+# Environment
+.env
+.env.local
+
+# Streamlit
+.streamlit/secrets.toml

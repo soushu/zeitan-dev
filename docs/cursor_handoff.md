@@ -235,6 +235,21 @@ zeitan-dev/
 2. 続いて coincheck, gmo, bitbank の各パーサー
 3. **tests/test_parsers.py** と **tests/fixtures/** にサンプル CSV を用意してユニットテスト作成
 
+### Git の状態（別AIでのプッシュ用）
+- **リポジトリ**: 初期化済み、ブランチ `main`
+- **初回コミット済み**: 「Initial commit: Zeitan Phase 1 base」（parsers/base.py、Streamlit shell、handoff 等を含む）
+- **リモート**: 未設定（プッシュするには以下を実行する必要あり）
+
+**リモートにプッシュする手順（GitHub の例）**
+1. GitHub で新規リポジトリ作成（例: `zeitan-dev`）。README や .gitignore は追加しない。
+2. ローカルでリモートを追加してプッシュ:
+   ```bash
+   cd /Users/yutookiguchi/Work/zeitan-dev
+   git remote add origin https://github.com/<ユーザー名>/zeitan-dev.git
+   git push -u origin main
+   ```
+   SSH の場合は `git@github.com:<ユーザー名>/zeitan-dev.git` を指定。
+
 ---
 
 ## 🎯 Phase 1 タスクリスト

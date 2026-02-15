@@ -279,21 +279,23 @@ zeitan-dev/
 
 ### Week 3-4: 計算エンジン
 ```
-□ src/calculators/moving_average.py: 移動平均法
-□ src/calculators/total_average.py: 総平均法
-□ tests/test_calculators.py: 計算テスト
-□ エッジケース対応（ハードフォーク、エアドロップ等）
+✅ src/calculators/moving_average.py: 移動平均法（完了）
+✅ src/calculators/total_average.py: 総平均法（完了）
+✅ tests/test_calculators.py: 計算テスト（完了・10テスト通過）
+□ エッジケース対応（ハードフォーク、エアドロップ等）← Phase 2以降
 ```
 
 ### Week 5-6: UI + レポート
 ```
-□ src/main.py: Streamlitアプリ完成
-  - CSVアップロード画面
-  - 計算方法選択（移動平均法/総平均法）
-  - 計算結果表示
-  - レポートダウンロード
-□ 確定申告用CSV出力
-□ PDFレポート生成
+✅ src/main.py: Streamlitアプリ完成（完了）
+  ✅ CSVアップロード画面（複数ファイル対応）
+  ✅ 取引所自動検出機能
+  ✅ 計算方法選択（移動平均法/総平均法）
+  ✅ 計算結果表示（総損益・取引履歴）
+  ✅ レポートダウンロード（CSV形式）
+  ✅ サマリーチャート（取引所別・通貨ペア別）
+✅ 確定申告用CSV出力（完了）
+□ PDFレポート生成 ← Phase 2以降
 ```
 
 ---

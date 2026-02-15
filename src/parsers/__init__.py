@@ -5,6 +5,9 @@ from .bitbank import BitbankParser
 from .bitflyer import BitflyerParser
 from .coincheck import CoincheckParser
 from .gmo import GMOParser
+from .linebitmax import LineBitmaxParser
+from .rakuten import RakutenParser
+from .sbivc import SBIVCParser
 
 __all__ = [
     "BaseParser",
@@ -13,4 +16,7 @@ __all__ = [
     "CoincheckParser",
     "GMOParser",
     "BitbankParser",
+    "SBIVCParser",
+    "RakutenParser",
+    "LineBitmaxParser",
 ]

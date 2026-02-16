@@ -3,6 +3,9 @@
 総平均法:
 - 年間平均取得原価 = 年間総購入額 / 年間総購入数量
 - 年間売却損益 = Σ[(売却価格 - 年間平均取得原価) × 売却数量]
+- エアドロップ・報酬: 受取時の時価で取得、雑所得として計上
+- ハードフォーク: 受取時の時価で取得、雑所得として計上
+- 送金: 課税なし
 """
 
 from datetime import datetime
@@ -27,11 +30,11 @@ class TradeResult(TypedDict):
     timestamp: datetime  # 取引日時
     exchange: str  # 取引所
     symbol: str  # 通貨ペア
-    type: str  # 'buy' or 'sell'
+    type: str  # 'buy', 'sell', 'airdrop', 'fork', 'reward', 'transfer_in', 'transfer_out'
     amount: float  # 取引数量
     price: float  # 取引価格（円/単位）
     fee: float  # 手数料（円）
-    profit_loss: float  # 損益（円）売却時のみ、購入時は0
+    profit_loss: float  # 損益（円）売却時=譲渡所得、報酬等=雑所得、購入・送金=0
     average_cost_used: float  # 使用した平均取得原価
 
 
@@ -86,6 +89,18 @@ class TotalAverageCalculator:
                 cost_basis = amount * average_cost  # 取得原価
                 profit_loss = sale_revenue - cost_basis
 
+            elif tx_type in ("airdrop", "fork", "reward"):
+                # エアドロップ・フォーク・報酬: 受取時の時価を雑所得として計上
+                income_value = amount * price
+                profit_loss = income_value
+
+            elif tx_type in ("buy", "transfer_in", "transfer_out"):
+                # 購入・送金: 損益なし
+                profit_loss = 0.0
+
+            else:
+                raise ValueError(f"不明な取引タイプ: {tx_type}")
+
             # 結果を記録
             results.append(
                 TradeResult(
@@ -115,7 +130,8 @@ class TotalAverageCalculator:
         yearly_purchases: dict[tuple[int, str], dict] = {}
 
         for tx in transactions:
-            if tx["type"] != "buy":
+            # 購入・エアドロップ・フォーク・報酬・転入を取得コストに含める
+            if tx["type"] not in ("buy", "airdrop", "fork", "reward", "transfer_in"):
                 continue
 
             year = tx["timestamp"].year
@@ -123,6 +139,7 @@ class TotalAverageCalculator:
             amount = tx["amount"]
             price = tx["price"]
             fee = tx["fee"]
+            tx_type = tx["type"]
 
             key = (year, symbol)
 
@@ -132,7 +149,16 @@ class TotalAverageCalculator:
                     "total_cost": 0.0,
                 }
 
-            purchase_cost = amount * price + fee  # 手数料は取得原価に含める
+            # 取得原価の計算
+            if tx_type == "buy":
+                purchase_cost = amount * price + fee  # 手数料は取得原価に含める
+            elif tx_type in ("airdrop", "fork", "reward"):
+                purchase_cost = amount * price  # 受取時の時価が取得原価
+            elif tx_type == "transfer_in":
+                purchase_cost = amount * price if price > 0 else 0  # 指定された原価または0
+            else:
+                purchase_cost = 0.0
+
             yearly_purchases[key]["total_amount"] += amount
             yearly_purchases[key]["total_cost"] += purchase_cost
 

@@ -1,4 +1,14 @@
-"""取引所CSVパーサーの抽象基底クラス."""
+"""取引所CSVパーサーの抽象基底クラス.
+
+トランザクションタイプの説明:
+- 'buy': 通常の購入取引
+- 'sell': 通常の売却取引
+- 'airdrop': エアドロップによる無償付与（税法上は雑所得、受取時の時価で取得）
+- 'fork': ハードフォークによる新通貨取得（税法上は雑所得、受取時の時価で取得）
+- 'reward': ステーキング・マイニング報酬（税法上は雑所得、受取時の時価で取得）
+- 'transfer_in': 他の取引所・ウォレットからの受取（課税なし、元の取得原価を引き継ぐ）
+- 'transfer_out': 他の取引所・ウォレットへの送金（課税なし、保有数量から減算）
+"""
 
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -12,9 +22,9 @@ class TransactionFormat(TypedDict):
     timestamp: datetime
     exchange: str
     symbol: str
-    type: str  # 'buy' or 'sell'
+    type: str  # 'buy', 'sell', 'airdrop', 'fork', 'reward', 'transfer_in', 'transfer_out'
     amount: float
-    price: float
+    price: float  # エアドロップ・報酬の場合は受取時の時価、送金の場合は0
     fee: float
 
 

@@ -3,6 +3,9 @@
 移動平均法:
 - 購入時: 新しい平均取得原価 = (既存保有額 + 購入額) / (既存数量 + 購入数量)
 - 売却時: 売却損益 = (売却価格 - 平均取得原価) × 売却数量
+- エアドロップ・報酬: 受取時の時価で取得、雑所得として計上
+- ハードフォーク: 受取時の時価で取得、雑所得として計上
+- 送金: 保有数量の増減のみ（課税なし）
 """
 
 from datetime import datetime
@@ -25,11 +28,11 @@ class TradeResult(TypedDict):
     timestamp: datetime  # 取引日時
     exchange: str  # 取引所
     symbol: str  # 通貨ペア
-    type: str  # 'buy' or 'sell'
+    type: str  # 'buy', 'sell', 'airdrop', 'fork', 'reward', 'transfer_in', 'transfer_out'
     amount: float  # 取引数量
     price: float  # 取引価格（円/単位）
     fee: float  # 手数料（円）
-    profit_loss: float  # 損益（円）売却時のみ、購入時は0
+    profit_loss: float  # 損益（円）売却時=譲渡所得、報酬等=雑所得、購入・送金=0
     average_cost_after: float  # 取引後の平均取得原価
 
 
@@ -107,6 +110,56 @@ class MovingAverageCalculator:
                     raise ValueError(
                         f"保有数量不足: {symbol} の保有数量が負になりました。"
                     )
+
+            elif tx_type in ("airdrop", "fork", "reward"):
+                # エアドロップ・フォーク・報酬: 受取時の時価で取得、雑所得として計上
+                # 受取時の時価 = price（取引時の市場価格）
+                income_value = amount * price  # 雑所得額
+                profit_loss = income_value  # 雑所得として記録
+
+                # 保有に追加（取得原価 = 受取時の時価）
+                total_cost_before = holding["amount"] * holding["average_cost"]
+                acquisition_cost = income_value  # 受取時の時価が取得原価
+                new_amount = holding["amount"] + amount
+
+                if new_amount > 0:
+                    new_average_cost = (total_cost_before + acquisition_cost) / new_amount
+                else:
+                    new_average_cost = 0.0
+
+                holding["amount"] = new_amount
+                holding["average_cost"] = new_average_cost
+
+            elif tx_type == "transfer_in":
+                # 他の取引所・ウォレットからの受取
+                # 課税なし、保有数量を増やす（平均取得原価は元のまま維持）
+                # price=0の場合は平均取得原価を維持、price>0の場合は指定された原価で取得
+                total_cost_before = holding["amount"] * holding["average_cost"]
+                acquisition_cost = amount * price if price > 0 else 0
+                new_amount = holding["amount"] + amount
+
+                if new_amount > 0:
+                    new_average_cost = (total_cost_before + acquisition_cost) / new_amount
+                else:
+                    new_average_cost = 0.0
+
+                holding["amount"] = new_amount
+                holding["average_cost"] = new_average_cost
+                profit_loss = 0.0  # 課税なし
+
+            elif tx_type == "transfer_out":
+                # 他の取引所・ウォレットへの送金
+                # 課税なし、保有数量を減らす、手数料を考慮
+                if holding["amount"] < amount:
+                    raise ValueError(
+                        f"保有数量不足: {symbol} を送金しようとしましたが、保有数量が不足しています。"
+                    )
+
+                holding["amount"] -= amount
+                profit_loss = 0.0  # 課税なし
+
+            else:
+                raise ValueError(f"不明な取引タイプ: {tx_type}")
 
             # 結果を記録
             results.append(

@@ -8,15 +8,19 @@ import streamlit as st
 
 from src.calculators import MovingAverageCalculator, TotalAverageCalculator
 from src.parsers import (
+    BinanceParser,
     BitbankParser,
     BitflyerParser,
+    CoinbaseParser,
     CoincheckParser,
     GMOParser,
+    KrakenParser,
     LineBitmaxParser,
     RakutenParser,
     SBIVCParser,
 )
 from src.parsers.base import BaseParser, TransactionFormat
+from src.reporters import PDFReporter
 
 # ページ設定
 st.set_page_config(
@@ -33,6 +37,7 @@ st.divider()
 # サイドバー
 with st.sidebar:
     st.header("📊 対応取引所")
+    st.markdown("**🇯🇵 国内取引所**")
     st.markdown(
         """
         - bitFlyer
@@ -42,6 +47,14 @@ with st.sidebar:
         - SBI VCトレード
         - 楽天ウォレット
         - LINE BITMAX
+        """
+    )
+    st.markdown("**🌏 海外取引所**")
+    st.markdown(
+        """
+        - Binance
+        - Coinbase
+        - Kraken
         """
     )
     st.divider()
@@ -54,6 +67,7 @@ with st.sidebar:
 
 # パーサーのマッピング
 PARSERS: dict[str, BaseParser] = {
+    # 国内取引所
     "bitFlyer": BitflyerParser(),
     "Coincheck": CoincheckParser(),
     "GMOコイン": GMOParser(),
@@ -61,6 +75,10 @@ PARSERS: dict[str, BaseParser] = {
     "SBI VCトレード": SBIVCParser(),
     "楽天ウォレット": RakutenParser(),
     "LINE BITMAX": LineBitmaxParser(),
+    # 海外取引所
+    "Binance": BinanceParser(),
+    "Coinbase (US)": CoinbaseParser(),
+    "Kraken": KrakenParser(),
 }
 
 
@@ -182,10 +200,19 @@ if uploaded_files:
         ]
 
         # 種別を日本語に変換
-        df_display["種別"] = df_display["種別"].map({"buy": "購入", "sell": "売却"})
+        type_mapping = {
+            "buy": "購入",
+            "sell": "売却",
+            "airdrop": "エアドロップ",
+            "fork": "フォーク",
+            "reward": "報酬",
+            "transfer_in": "受取",
+            "transfer_out": "送金",
+        }
+        df_display["種別"] = df_display["種別"].map(type_mapping)
 
         # 総損益を表示
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric(
                 label="総取引件数",
@@ -202,6 +229,18 @@ if uploaded_files:
             st.metric(
                 label="売却取引件数",
                 value=f"{sell_count} 件",
+            )
+        with col4:
+            # エアドロップ・報酬・フォークの合計所得
+            income_types = ("airdrop", "fork", "reward")
+            income_total = sum(
+                r["profit_loss"] for r in results if r["type"] in income_types
+            )
+            income_count = sum(1 for r in results if r["type"] in income_types)
+            st.metric(
+                label="雑所得（報酬等）",
+                value=f"¥{income_total:,.0f}" if income_count > 0 else "¥0",
+                help=f"エアドロップ・フォーク・報酬による所得 ({income_count}件)",
             )
 
         # 取引履歴を表示
@@ -222,13 +261,32 @@ if uploaded_files:
         df_results.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
         csv_bytes = csv_buffer.getvalue().encode("utf-8-sig")
 
-        st.download_button(
-            label="📥 CSV形式でダウンロード",
-            data=csv_bytes,
-            file_name=f"zeitan_report_{calc_method}.csv",
-            mime="text/csv",
-            help="計算結果をCSV形式でダウンロードします",
-        )
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.download_button(
+                label="📥 CSV形式でダウンロード",
+                data=csv_bytes,
+                file_name=f"zeitan_report_{calc_method}.csv",
+                mime="text/csv",
+                help="計算結果をCSV形式でダウンロードします",
+            )
+
+        with col2:
+            # PDFダウンロード
+            pdf_reporter = PDFReporter()
+            pdf_bytes = pdf_reporter.generate(
+                results=results,
+                total_profit_loss=total_pl,
+                calc_method=calc_method,
+            )
+            st.download_button(
+                label="📄 PDF形式でダウンロード",
+                data=pdf_bytes,
+                file_name=f"zeitan_report_{calc_method}.pdf",
+                mime="application/pdf",
+                help="計算結果をPDF形式でダウンロードします（サマリー付き）",
+            )
 
         # サマリー情報
         st.subheader("📊 サマリー")

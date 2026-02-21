@@ -6,6 +6,10 @@
 - エアドロップ・報酬: 受取時の時価で取得、雑所得として計上
 - ハードフォーク: 受取時の時価で取得、雑所得として計上
 - 送金: 保有数量の増減のみ（課税なし）
+- DeFi Swap: トークン交換、売却として扱い損益計算
+- 流動性追加: 保有数量減少、課税なし
+- 流動性削除: 保有数量増加、受取時の時価で取得
+- NFT売買: 通常の売買と同様に損益計算
 """
 
 from datetime import datetime
@@ -28,7 +32,7 @@ class TradeResult(TypedDict):
     timestamp: datetime  # 取引日時
     exchange: str  # 取引所
     symbol: str  # 通貨ペア
-    type: str  # 'buy', 'sell', 'airdrop', 'fork', 'reward', 'transfer_in', 'transfer_out'
+    type: str  # 'buy', 'sell', 'airdrop', 'fork', 'reward', 'transfer_in', 'transfer_out', 'swap', 'liquidity_add', 'liquidity_remove', 'lending', 'nft_buy', 'nft_sell'
     amount: float  # 取引数量
     price: float  # 取引価格（円/単位）
     fee: float  # 手数料（円）
@@ -157,6 +161,100 @@ class MovingAverageCalculator:
 
                 holding["amount"] -= amount
                 profit_loss = 0.0  # 課税なし
+
+            elif tx_type == "swap":
+                # DeFiプロトコルでのトークン交換（例: ETH → USDC）
+                # 売却として扱い、損益を計算
+                if holding["amount"] <= 0:
+                    raise ValueError(
+                        f"保有数量不足: {symbol} をswapしようとしましたが、保有数量が 0 です。"
+                    )
+
+                swap_revenue = amount * price - fee  # swap収入から手数料を差し引く
+                cost_basis = amount * holding["average_cost"]  # 取得原価
+                profit_loss = swap_revenue - cost_basis
+
+                # 保有数量を減らす
+                holding["amount"] -= amount
+
+                if holding["amount"] < 0:
+                    raise ValueError(
+                        f"保有数量不足: {symbol} の保有数量が負になりました。"
+                    )
+
+            elif tx_type == "liquidity_add":
+                # 流動性プールへの資産預入
+                # 課税なし、保有数量を減らす
+                if holding["amount"] < amount:
+                    raise ValueError(
+                        f"保有数量不足: {symbol} を流動性追加しようとしましたが、保有数量が不足しています。"
+                    )
+
+                holding["amount"] -= amount
+                profit_loss = 0.0  # 課税なし
+
+            elif tx_type == "liquidity_remove":
+                # 流動性プールからの資産引出
+                # 受取時の時価で取得、保有数量を増やす
+                total_cost_before = holding["amount"] * holding["average_cost"]
+                acquisition_cost = amount * price  # 受取時の時価
+                new_amount = holding["amount"] + amount
+
+                if new_amount > 0:
+                    new_average_cost = (total_cost_before + acquisition_cost) / new_amount
+                else:
+                    new_average_cost = 0.0
+
+                holding["amount"] = new_amount
+                holding["average_cost"] = new_average_cost
+                profit_loss = 0.0  # 引出時点では課税なし（後の売却時に損益発生）
+
+            elif tx_type == "lending":
+                # レンディングプロトコルでの貸出
+                # 課税なし、保有数量を減らす（実際は貸し出し中だが簡易的に減算）
+                if holding["amount"] < amount:
+                    raise ValueError(
+                        f"保有数量不足: {symbol} を貸し出そうとしましたが、保有数量が不足しています。"
+                    )
+
+                holding["amount"] -= amount
+                profit_loss = 0.0  # 課税なし
+
+            elif tx_type == "nft_buy":
+                # NFTの購入
+                # 通常の購入と同様に処理
+                total_cost_before = holding["amount"] * holding["average_cost"]
+                purchase_cost = amount * price + fee  # 手数料は取得原価に含める
+                new_amount = holding["amount"] + amount
+
+                if new_amount > 0:
+                    new_average_cost = (total_cost_before + purchase_cost) / new_amount
+                else:
+                    new_average_cost = 0.0
+
+                holding["amount"] = new_amount
+                holding["average_cost"] = new_average_cost
+                profit_loss = 0.0  # 購入時は損益なし
+
+            elif tx_type == "nft_sell":
+                # NFTの売却
+                # 通常の売却と同様に損益を計算
+                if holding["amount"] <= 0:
+                    raise ValueError(
+                        f"保有数量不足: {symbol} (NFT) を売却しようとしましたが、保有数量が 0 です。"
+                    )
+
+                sale_revenue = amount * price - fee  # 売却収入から手数料を差し引く
+                cost_basis = amount * holding["average_cost"]  # 取得原価
+                profit_loss = sale_revenue - cost_basis
+
+                # 保有数量を減らす
+                holding["amount"] -= amount
+
+                if holding["amount"] < 0:
+                    raise ValueError(
+                        f"保有数量不足: {symbol} (NFT) の保有数量が負になりました。"
+                    )
 
             else:
                 raise ValueError(f"不明な取引タイプ: {tx_type}")

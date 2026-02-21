@@ -6,6 +6,9 @@
 - エアドロップ・報酬: 受取時の時価で取得、雑所得として計上
 - ハードフォーク: 受取時の時価で取得、雑所得として計上
 - 送金: 課税なし
+- DeFi Swap: トークン交換、売却として扱い損益計算
+- 流動性追加/削除: 課税なし（削除時は受取時の時価で取得）
+- NFT売買: 通常の売買と同様に損益計算
 """
 
 from datetime import datetime
@@ -30,7 +33,7 @@ class TradeResult(TypedDict):
     timestamp: datetime  # 取引日時
     exchange: str  # 取引所
     symbol: str  # 通貨ペア
-    type: str  # 'buy', 'sell', 'airdrop', 'fork', 'reward', 'transfer_in', 'transfer_out'
+    type: str  # 'buy', 'sell', 'airdrop', 'fork', 'reward', 'transfer_in', 'transfer_out', 'swap', 'liquidity_add', 'liquidity_remove', 'lending', 'nft_buy', 'nft_sell'
     amount: float  # 取引数量
     price: float  # 取引価格（円/単位）
     fee: float  # 手数料（円）
@@ -83,8 +86,8 @@ class TotalAverageCalculator:
 
             profit_loss = 0.0
 
-            if tx_type == "sell":
-                # 売却時: 損益を計算
+            if tx_type in ("sell", "swap", "nft_sell"):
+                # 売却時: 損益を計算（swap、NFT売却も同様）
                 sale_revenue = amount * price - fee  # 売却収入から手数料を差し引く
                 cost_basis = amount * average_cost  # 取得原価
                 profit_loss = sale_revenue - cost_basis
@@ -94,8 +97,8 @@ class TotalAverageCalculator:
                 income_value = amount * price
                 profit_loss = income_value
 
-            elif tx_type in ("buy", "transfer_in", "transfer_out"):
-                # 購入・送金: 損益なし
+            elif tx_type in ("buy", "transfer_in", "transfer_out", "liquidity_add", "liquidity_remove", "lending", "nft_buy"):
+                # 購入・送金・流動性追加/削除・レンディング・NFT購入: 損益なし
                 profit_loss = 0.0
 
             else:
@@ -130,8 +133,8 @@ class TotalAverageCalculator:
         yearly_purchases: dict[tuple[int, str], dict] = {}
 
         for tx in transactions:
-            # 購入・エアドロップ・フォーク・報酬・転入を取得コストに含める
-            if tx["type"] not in ("buy", "airdrop", "fork", "reward", "transfer_in"):
+            # 購入・エアドロップ・フォーク・報酬・転入・流動性削除・NFT購入を取得コストに含める
+            if tx["type"] not in ("buy", "airdrop", "fork", "reward", "transfer_in", "liquidity_remove", "nft_buy"):
                 continue
 
             year = tx["timestamp"].year
@@ -156,6 +159,10 @@ class TotalAverageCalculator:
                 purchase_cost = amount * price  # 受取時の時価が取得原価
             elif tx_type == "transfer_in":
                 purchase_cost = amount * price if price > 0 else 0  # 指定された原価または0
+            elif tx_type == "liquidity_remove":
+                purchase_cost = amount * price  # 受取時の時価が取得原価
+            elif tx_type == "nft_buy":
+                purchase_cost = amount * price + fee  # NFT購入額 + 手数料
             else:
                 purchase_cost = 0.0
 

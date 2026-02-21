@@ -8,6 +8,12 @@
 - 'reward': ステーキング・マイニング報酬（税法上は雑所得、受取時の時価で取得）
 - 'transfer_in': 他の取引所・ウォレットからの受取（課税なし、元の取得原価を引き継ぐ）
 - 'transfer_out': 他の取引所・ウォレットへの送金（課税なし、保有数量から減算）
+- 'swap': DeFiプロトコルでのトークン交換（売却と購入の組み合わせとして処理）
+- 'liquidity_add': 流動性プールへの資産預入（保有数量から減算、LPトークン受取）
+- 'liquidity_remove': 流動性プールからの資産引出（LPトークン消費、資産受取）
+- 'lending': レンディングプロトコルでの貸出・借入
+- 'nft_buy': NFTの購入（購入額 + 手数料が取得原価）
+- 'nft_sell': NFTの売却（売却額 - 手数料 - 取得原価 = 損益）
 """
 
 from abc import ABC, abstractmethod
@@ -22,9 +28,9 @@ class TransactionFormat(TypedDict):
     timestamp: datetime
     exchange: str
     symbol: str
-    type: str  # 'buy', 'sell', 'airdrop', 'fork', 'reward', 'transfer_in', 'transfer_out'
+    type: str  # 'buy', 'sell', 'airdrop', 'fork', 'reward', 'transfer_in', 'transfer_out', 'swap', 'liquidity_add', 'liquidity_remove', 'lending', 'nft_buy', 'nft_sell'
     amount: float
-    price: float  # エアドロップ・報酬の場合は受取時の時価、送金の場合は0
+    price: float  # エアドロップ・報酬の場合は受取時の時価、送金の場合は0、DeFi/NFTは市場価格
     fee: float
 
 

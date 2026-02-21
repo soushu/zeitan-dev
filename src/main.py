@@ -8,16 +8,22 @@ import streamlit as st
 
 from src.calculators import MovingAverageCalculator, TotalAverageCalculator
 from src.parsers import (
+    AaveParser,
     BinanceParser,
     BitbankParser,
     BitflyerParser,
+    BlurParser,
+    BybitParser,
     CoinbaseParser,
     CoincheckParser,
     GMOParser,
     KrakenParser,
+    LiquidityPoolParser,
     LineBitmaxParser,
+    OpenSeaParser,
     RakutenParser,
     SBIVCParser,
+    UniswapParser,
 )
 from src.parsers.base import BaseParser, TransactionFormat
 from src.reporters import PDFReporter
@@ -53,8 +59,24 @@ with st.sidebar:
     st.markdown(
         """
         - Binance
+        - Bybit
         - Coinbase
         - Kraken
+        """
+    )
+    st.markdown("**🔗 DeFi**")
+    st.markdown(
+        """
+        - Uniswap
+        - Aave
+        - Liquidity Pool
+        """
+    )
+    st.markdown("**🖼️ NFT**")
+    st.markdown(
+        """
+        - OpenSea
+        - Blur
         """
     )
     st.divider()
@@ -77,8 +99,16 @@ PARSERS: dict[str, BaseParser] = {
     "LINE BITMAX": LineBitmaxParser(),
     # 海外取引所
     "Binance": BinanceParser(),
+    "Bybit": BybitParser(),
     "Coinbase (US)": CoinbaseParser(),
     "Kraken": KrakenParser(),
+    # DeFi
+    "Uniswap": UniswapParser(),
+    "Aave": AaveParser(),
+    "Liquidity Pool": LiquidityPoolParser(),
+    # NFT
+    "OpenSea": OpenSeaParser(),
+    "Blur": BlurParser(),
 }
 
 
@@ -208,6 +238,12 @@ if uploaded_files:
             "reward": "報酬",
             "transfer_in": "受取",
             "transfer_out": "送金",
+            "swap": "スワップ",
+            "liquidity_add": "流動性追加",
+            "liquidity_remove": "流動性削除",
+            "lending": "レンディング",
+            "nft_buy": "NFT購入",
+            "nft_sell": "NFT売却",
         }
         df_display["種別"] = df_display["種別"].map(type_mapping)
 
@@ -309,4 +345,4 @@ else:
 
 # フッター
 st.divider()
-st.caption("Zeitan v1.0 - Phase 1 MVP | 対応: 移動平均法・総平均法 | 対応取引所: 7社")
+st.caption("Zeitan v1.0 | 対応: 移動平均法・総平均法 | 取引所: 11社 + DeFi 3 + NFT 2")

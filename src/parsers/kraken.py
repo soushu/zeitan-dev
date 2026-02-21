@@ -68,18 +68,7 @@ class KrakenParser(BaseParser):
             # 通貨ペア
             if "pair" in df.columns:
                 pair = str(row["pair"])
-                # Krakenのペア形式（例: XXBTZUSD → BTC/USD）
-                if pair.startswith("XX") or pair.startswith("XZ"):
-                    # 先頭のXXやXZを削除
-                    pair = pair[2:]
-                if "USD" in pair:
-                    symbol = pair.replace("USD", "/USD")
-                elif "EUR" in pair:
-                    symbol = pair.replace("EUR", "/EUR")
-                elif "JPY" in pair:
-                    symbol = pair.replace("JPY", "/JPY")
-                else:
-                    symbol = pair
+                symbol = self._convert_kraken_pair(pair)
             elif "asset" in df.columns:
                 asset = str(row["asset"])
                 currency = str(row.get("currency", "USD"))
@@ -105,3 +94,49 @@ class KrakenParser(BaseParser):
             )
 
         return transactions
+
+    @staticmethod
+    def _convert_kraken_pair(pair: str) -> str:
+        """Krakenのペア表記を標準形式に変換する.
+
+        Krakenの命名規則:
+        - 暗号資産: X接頭辞（XXBT=BTC, XETH=ETH, XXRP=XRP, etc.）
+        - 法定通貨: Z接頭辞（ZUSD=USD, ZEUR=EUR, ZJPY=JPY, etc.）
+        - 例: XXBTZUSD → BTC/USD, XETHZJPY → ETH/JPY
+        """
+        # Krakenの暗号資産コード → 標準コードのマッピング
+        kraken_crypto = {
+            "XXBT": "BTC",
+            "XETH": "ETH",
+            "XXRP": "XRP",
+            "XLTC": "LTC",
+            "XXLM": "XLM",
+            "XDOGE": "DOGE",
+            "XXMR": "XMR",
+            "XZEC": "ZEC",
+        }
+        kraken_fiat = {
+            "ZUSD": "USD",
+            "ZEUR": "EUR",
+            "ZJPY": "JPY",
+            "ZGBP": "GBP",
+            "ZCAD": "CAD",
+        }
+
+        # マッピングで変換を試みる
+        for k_crypto, s_crypto in kraken_crypto.items():
+            if pair.startswith(k_crypto):
+                rest = pair[len(k_crypto):]
+                for k_fiat, s_fiat in kraken_fiat.items():
+                    if rest == k_fiat:
+                        return f"{s_crypto}/{s_fiat}"
+                # 法定通貨のマッピングにない場合はそのまま
+                return f"{s_crypto}/{rest}"
+
+        # マッピングにない場合、/で区切りを推測
+        for fiat in ("USD", "EUR", "JPY", "GBP"):
+            if pair.endswith(fiat):
+                base = pair[: -len(fiat)]
+                return f"{base}/{fiat}"
+
+        return pair

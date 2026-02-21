@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getHistory, getSessionDetail } from "@/lib/api";
-import type { SessionDetail, SessionSummary } from "@/lib/types";
+import { downloadCSV, downloadPDF, getHistory, getSessionDetail, triggerDownload } from "@/lib/api";
+import type { CalcMethod, SessionDetail, SessionSummary } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,8 @@ export function HistoryList() {
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [downloadingCsv, setDownloadingCsv] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     getHistory()
@@ -40,6 +42,30 @@ export function HistoryList() {
       )
       .finally(() => setLoading(false));
   }, []);
+
+  async function handleDownloadCSV(d: SessionDetail) {
+    setDownloadingCsv(true);
+    try {
+      const blob = await downloadCSV({ transactions: d.transactions, method: d.calc_method as CalcMethod });
+      triggerDownload(blob, `zeitan_session_${d.id}.csv`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "CSVダウンロードに失敗しました");
+    } finally {
+      setDownloadingCsv(false);
+    }
+  }
+
+  async function handleDownloadPDF(d: SessionDetail) {
+    setDownloadingPdf(true);
+    try {
+      const blob = await downloadPDF({ transactions: d.transactions, method: d.calc_method as CalcMethod });
+      triggerDownload(blob, `zeitan_session_${d.id}.pdf`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "PDFダウンロードに失敗しました");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }
 
   async function toggleDetail(id: number) {
     if (expandedId === id) {
@@ -107,11 +133,31 @@ export function HistoryList() {
             </Button>
 
             {expandedId === s.id && (
-              <div className="mt-4">
+              <div className="mt-4 space-y-4">
                 {detailLoading ? (
                   <p className="text-sm text-muted-foreground">読み込み中...</p>
                 ) : detail ? (
-                  <TransactionTable results={detail.results} />
+                  <>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadCSV(detail)}
+                        disabled={downloadingCsv}
+                      >
+                        {downloadingCsv ? "ダウンロード中..." : "CSV ダウンロード"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadPDF(detail)}
+                        disabled={downloadingPdf}
+                      >
+                        {downloadingPdf ? "ダウンロード中..." : "PDF ダウンロード"}
+                      </Button>
+                    </div>
+                    <TransactionTable results={detail.results} />
+                  </>
                 ) : null}
               </div>
             )}

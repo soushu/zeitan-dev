@@ -1,7 +1,7 @@
 """FastAPI Pydantic Models."""
 
 from datetime import datetime
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -71,3 +71,29 @@ class ErrorResponse(BaseModel):
 
     error: str
     detail: str | None = None
+
+
+class CalculateResponseWithSession(CalculateResponse):
+    """セッションID付き計算レスポンス."""
+
+    session_id: int
+
+
+class SessionSummary(BaseModel):
+    """計算履歴一覧用サマリー."""
+
+    id: int
+    created_at: datetime
+    calc_method: str
+    total_profit_loss: float
+    transaction_count: int
+    note: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class SessionDetail(SessionSummary):
+    """計算履歴詳細（取引・結果含む）."""
+
+    transactions: list[TransactionResponse]
+    results: list[TradeResultResponse]

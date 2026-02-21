@@ -27,6 +27,11 @@ from src.parsers import (
 )
 from src.parsers.base import BaseParser, TransactionFormat
 from src.reporters import PDFReporter
+from src.utils.database import init_db
+from src.utils.db_service import get_sessions, save_calculation
+
+# DB 初期化（初回起動時にテーブルを作成する）
+init_db()
 
 # ページ設定
 st.set_page_config(
@@ -86,6 +91,28 @@ with st.sidebar:
         options=["移動平均法", "総平均法"],
         help="移動平均法: 購入ごとに平均取得原価を更新\n総平均法: 年間の購入平均を使用",
     )
+    st.divider()
+    st.header("🗂️ 計算履歴")
+    try:
+        from src.utils.database import SessionLocal
+
+        _db = SessionLocal()
+        try:
+            _sessions = get_sessions(_db)[:10]
+        finally:
+            _db.close()
+        if _sessions:
+            for _s in _sessions:
+                _label = (
+                    f"{_s.created_at.strftime('%m/%d %H:%M')} "
+                    f"{'移動' if _s.calc_method == 'moving_average' else '総'} "
+                    f"¥{_s.total_profit_loss:,.0f}"
+                )
+                st.button(_label, key=f"hist_{_s.id}", disabled=True)
+        else:
+            st.caption("履歴はありません")
+    except Exception:
+        st.caption("履歴を読み込めませんでした")
 
 # パーサーのマッピング
 PARSERS: dict[str, BaseParser] = {
@@ -198,6 +225,28 @@ if uploaded_files:
 
         results = calculator.calculate(all_transactions)
         total_pl = calculator.get_total_profit_loss(results)
+
+        # DB に保存
+        try:
+            from src.utils.database import SessionLocal
+
+            _db = SessionLocal()
+            try:
+                _calc_method_key = (
+                    "moving_average" if calc_method == "移動平均法" else "total_average"
+                )
+                save_calculation(
+                    db=_db,
+                    transactions=all_transactions,
+                    results=results,
+                    total_profit_loss=total_pl,
+                    calc_method=_calc_method_key,
+                )
+                st.toast("計算結果を保存しました", icon="💾")
+            finally:
+                _db.close()
+        except Exception:
+            pass  # DB 保存失敗はサイレントに無視
 
         # 結果をデータフレームに変換
         df_results = pd.DataFrame(results)

@@ -3,8 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import calculate, parse, report
-from api.routers import history
+from api.routers import calculate, history, parse, report
 from src.utils.database import init_db
 
 app = FastAPI(

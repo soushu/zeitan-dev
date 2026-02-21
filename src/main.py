@@ -1,5 +1,6 @@
 """Zeitan - 暗号通貨税金計算アプリ（Streamlit版）."""
 
+import hashlib
 import io
 from pathlib import Path
 
@@ -27,7 +28,7 @@ from src.parsers import (
 )
 from src.parsers.base import BaseParser, TransactionFormat
 from src.reporters import PDFReporter
-from src.utils.database import init_db
+from src.utils.database import SessionLocal, init_db
 from src.utils.db_service import get_sessions, save_calculation
 
 # DB 初期化（初回起動時にテーブルを作成する）
@@ -94,8 +95,6 @@ with st.sidebar:
     st.divider()
     st.header("🗂️ 計算履歴")
     try:
-        from src.utils.database import SessionLocal
-
         _db = SessionLocal()
         try:
             _sessions = get_sessions(_db)[:10]
@@ -226,27 +225,31 @@ if uploaded_files:
         results = calculator.calculate(all_transactions)
         total_pl = calculator.get_total_profit_loss(results)
 
-        # DB に保存
-        try:
-            from src.utils.database import SessionLocal
-
-            _db = SessionLocal()
+        # DB に保存（ファイルセット＋計算方法が同じなら重複保存しない）
+        _calc_method_key = (
+            "moving_average" if calc_method == "移動平均法" else "total_average"
+        )
+        _save_fingerprint = hashlib.md5(
+            str([(fi["ファイル名"], fi["サイズ"]) for fi in file_info]).encode()
+            + _calc_method_key.encode()
+        ).hexdigest()
+        if st.session_state.get("last_db_save_key") != _save_fingerprint:
             try:
-                _calc_method_key = (
-                    "moving_average" if calc_method == "移動平均法" else "total_average"
-                )
-                save_calculation(
-                    db=_db,
-                    transactions=all_transactions,
-                    results=results,
-                    total_profit_loss=total_pl,
-                    calc_method=_calc_method_key,
-                )
-                st.toast("計算結果を保存しました", icon="💾")
-            finally:
-                _db.close()
-        except Exception:
-            pass  # DB 保存失敗はサイレントに無視
+                _db = SessionLocal()
+                try:
+                    save_calculation(
+                        db=_db,
+                        transactions=all_transactions,
+                        results=results,
+                        total_profit_loss=total_pl,
+                        calc_method=_calc_method_key,
+                    )
+                    st.session_state["last_db_save_key"] = _save_fingerprint
+                    st.toast("計算結果を保存しました", icon="💾")
+                finally:
+                    _db.close()
+            except Exception:
+                pass  # DB 保存失敗はサイレントに無視
 
         # 結果をデータフレームに変換
         df_results = pd.DataFrame(results)

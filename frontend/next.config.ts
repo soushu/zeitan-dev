@@ -9,6 +9,25 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = {
+        ignored: [
+          "**/node_modules/**",
+          "**/.git/**",
+          "**/venv/**",
+          "**/data/**",
+          "**/api/**",
+          "**/src/**",
+          "**/tests/**",
+          "**/__pycache__/**",
+          "**/*.db",
+          "**/*.pyc",
+        ],
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;

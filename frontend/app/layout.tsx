@@ -14,7 +14,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ja">
+    <html lang="ja" suppressHydrationWarning>
       <body className={`${geist.className} min-h-screen bg-background antialiased`}>
         <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
           <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">

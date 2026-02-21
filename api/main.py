@@ -1,10 +1,20 @@
 """Zeitan FastAPI メインアプリケーション."""
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routers import calculate, history, parse, report
 from src.utils.database import init_db
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """アプリケーションライフサイクル管理."""
+    init_db()
+    yield
+
 
 app = FastAPI(
     title="Zeitan API",
@@ -13,6 +23,7 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
+    lifespan=lifespan,
 )
 
 # CORS設定
@@ -23,12 +34,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-async def on_startup():
-    """起動時にテーブルを初期化する."""
-    init_db()
 
 
 # ルーター登録

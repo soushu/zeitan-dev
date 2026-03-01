@@ -213,3 +213,87 @@ class TestAPIEndpoints:
         assert data["id"] == session_id
         assert len(data["transactions"]) == 1
         assert len(data["results"]) == 1
+
+
+_SAMPLE_TRANSACTIONS = [
+    {
+        "timestamp": "2024-01-01T10:00:00",
+        "exchange": "bitflyer",
+        "symbol": "BTC/JPY",
+        "type": "buy",
+        "amount": 1.0,
+        "price": 5000000.0,
+        "fee": 1000.0,
+    },
+    {
+        "timestamp": "2024-01-02T10:00:00",
+        "exchange": "bitflyer",
+        "symbol": "BTC/JPY",
+        "type": "sell",
+        "amount": 1.0,
+        "price": 5500000.0,
+        "fee": 1000.0,
+    },
+]
+
+
+class TestReportEndpoints:
+    """レポートエンドポイント（PDF/CSV）のテスト."""
+
+    def test_csv_report_moving_average(self, client) -> None:
+        """移動平均法でCSVレポートが生成できること."""
+        request_data = {"transactions": _SAMPLE_TRANSACTIONS, "method": "moving_average"}
+        response = client.post("/api/report/csv", json=request_data)
+        assert response.status_code == 200
+        assert "text/csv" in response.headers["content-type"]
+        assert len(response.content) > 0
+
+    def test_csv_report_total_average(self, client) -> None:
+        """総平均法でCSVレポートが生成できること."""
+        request_data = {"transactions": _SAMPLE_TRANSACTIONS, "method": "total_average"}
+        response = client.post("/api/report/csv", json=request_data)
+        assert response.status_code == 200
+        assert "text/csv" in response.headers["content-type"]
+        assert len(response.content) > 0
+
+    def test_csv_report_has_expected_columns(self, client) -> None:
+        """CSVレポートに日本語の列ヘッダーが含まれること."""
+        request_data = {"transactions": _SAMPLE_TRANSACTIONS, "method": "moving_average"}
+        response = client.post("/api/report/csv", json=request_data)
+        assert response.status_code == 200
+        text = response.content.decode("utf-8-sig")
+        header = text.splitlines()[0]
+        for col in ["日時", "取引所", "通貨ペア", "種別", "数量", "損益（円）"]:
+            assert col in header
+
+    def test_pdf_report_moving_average(self, client) -> None:
+        """移動平均法でPDFレポートが生成できること."""
+        request_data = {"transactions": _SAMPLE_TRANSACTIONS, "method": "moving_average"}
+        response = client.post("/api/report/pdf", json=request_data)
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/pdf"
+        assert response.content[:4] == b"%PDF"
+
+    def test_pdf_report_total_average(self, client) -> None:
+        """総平均法でPDFレポートが生成できること."""
+        request_data = {"transactions": _SAMPLE_TRANSACTIONS, "method": "total_average"}
+        response = client.post("/api/report/pdf", json=request_data)
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/pdf"
+        assert response.content[:4] == b"%PDF"
+
+    def test_pdf_report_content_disposition(self, client) -> None:
+        """PDFレポートにContent-Dispositionヘッダーが付くこと."""
+        request_data = {"transactions": _SAMPLE_TRANSACTIONS, "method": "moving_average"}
+        response = client.post("/api/report/pdf", json=request_data)
+        assert response.status_code == 200
+        assert "attachment" in response.headers["content-disposition"]
+        assert ".pdf" in response.headers["content-disposition"]
+
+    def test_csv_report_content_disposition(self, client) -> None:
+        """CSVレポートにContent-Dispositionヘッダーが付くこと."""
+        request_data = {"transactions": _SAMPLE_TRANSACTIONS, "method": "moving_average"}
+        response = client.post("/api/report/csv", json=request_data)
+        assert response.status_code == 200
+        assert "attachment" in response.headers["content-disposition"]
+        assert ".csv" in response.headers["content-disposition"]

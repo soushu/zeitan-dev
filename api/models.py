@@ -88,6 +88,7 @@ class SessionSummary(BaseModel):
     total_profit_loss: float
     transaction_count: int
     note: Optional[str] = None
+    tax_year: Optional[int] = None
 
     model_config = {"from_attributes": True}
 

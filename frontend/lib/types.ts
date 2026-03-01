@@ -53,6 +53,7 @@ export interface SessionSummary {
   total_profit_loss: number;
   transaction_count: number;
   note: string | null;
+  tax_year: number | null;
 }
 
 export interface SessionDetail extends SessionSummary {

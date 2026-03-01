@@ -57,6 +57,20 @@ async def generate_csv_report(request: CalculateRequest):
         # DataFrameに変換
         df = pd.DataFrame(results)
 
+        # 列ヘッダーを日本語に変換
+        column_map = {
+            "timestamp": "日時",
+            "exchange": "取引所",
+            "symbol": "通貨ペア",
+            "type": "種別",
+            "amount": "数量",
+            "price": "価格（円）",
+            "fee": "手数料（円）",
+            "profit_loss": "損益（円）",
+            "average_cost_after": "平均取得原価（円）",
+        }
+        df = df.rename(columns={k: v for k, v in column_map.items() if k in df.columns})
+
         # CSVバイナリ生成
         csv_buffer = io.StringIO()
         df.to_csv(csv_buffer, index=False, encoding="utf-8-sig")

@@ -1,11 +1,11 @@
 """Liquidity Pool (Uniswap V2/V3, Sushiswap等) Parser."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
-from ..base import BaseParser, TransactionFormat
+from ..base import BaseParser, TransactionFormat, utc_to_jst
 
 
 class LiquidityPoolParser(BaseParser):
@@ -56,11 +56,11 @@ class LiquidityPoolParser(BaseParser):
             price_usd = float(row.get("Price USD", 0))
             fee = float(row.get("Fee", 0))
 
-            # タイムスタンプをパース
+            # タイムスタンプをパース（UTC → JST 変換）
             try:
-                timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+                timestamp = utc_to_jst(datetime.fromisoformat(timestamp_str.replace("Z", "+00:00")))
             except ValueError:
-                timestamp = datetime.fromtimestamp(float(timestamp_str))
+                timestamp = utc_to_jst(datetime.fromtimestamp(float(timestamp_str), tz=timezone.utc))
 
             # アクションに応じて取引タイプを決定
             if "add" in action:

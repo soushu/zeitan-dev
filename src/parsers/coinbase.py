@@ -1,11 +1,10 @@
 """CoinbaseのCSVパーサー."""
 
-from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 
-from .base import BaseParser, TransactionFormat
+from .base import BaseParser, TransactionFormat, utc_to_jst
 
 
 class CoinbaseParser(BaseParser):
@@ -59,9 +58,9 @@ class CoinbaseParser(BaseParser):
             else:
                 continue  # その他のトランザクションはスキップ
 
-            # 日時のパース
+            # 日時のパース（UTC → JST 変換）
             timestamp_str = str(row["Timestamp"])
-            timestamp = pd.to_datetime(timestamp_str).to_pydatetime()
+            timestamp = utc_to_jst(pd.to_datetime(timestamp_str, utc=True).to_pydatetime())
 
             # 資産名と通貨ペア
             asset = str(row["Asset"])

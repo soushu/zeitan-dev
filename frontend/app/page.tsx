@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { calculate } from "@/lib/api";
 import type {
   CalcMethod,
@@ -8,6 +9,7 @@ import type {
   CalculateResponseWithSession,
   TransactionResponse,
 } from "@/lib/types";
+import { BreakdownTables } from "@/components/BreakdownTables";
 import { CalcMethodSelector } from "@/components/CalcMethodSelector";
 import { DownloadButtons } from "@/components/DownloadButtons";
 import { FileUploader } from "@/components/FileUploader";
@@ -127,9 +129,18 @@ export default function Home() {
           <CardContent className="space-y-4">
             <CalcMethodSelector value={method} onChange={setMethod} />
             {calcError && (
-              <p className="text-sm text-destructive">{calcError}</p>
+              <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                <span>{calcError}</span>
+                <button
+                  onClick={() => setCalcError(null)}
+                  aria-label="エラーメッセージを閉じる"
+                  className="ml-3 text-destructive/60 hover:text-destructive"
+                >
+                  ✕
+                </button>
+              </div>
             )}
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <Button
                 onClick={handleCalculate}
                 disabled={isCalculating || transactions.length === 0}
@@ -137,9 +148,14 @@ export default function Home() {
                 {isCalculating ? "計算中..." : "計算する"}
               </Button>
               {step === "result" && (
-                <Button variant="outline" onClick={handleReset}>
-                  最初からやり直す
-                </Button>
+                <>
+                  <Button variant="outline" onClick={handleReset}>
+                    最初からやり直す
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link href="/dashboard">ダッシュボードで確認する →</Link>
+                  </Button>
+                </>
               )}
             </div>
           </CardContent>
@@ -157,6 +173,8 @@ export default function Home() {
               <ResultMetrics result={result} />
             </CardContent>
           </Card>
+
+          <BreakdownTables results={result.results} />
 
           <Card>
             <CardHeader>

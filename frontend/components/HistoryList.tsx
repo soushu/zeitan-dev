@@ -1,31 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { downloadCSV, downloadPDF, getHistory, getSessionDetail, triggerDownload } from "@/lib/api";
 import type { CalcMethod, SessionDetail, SessionSummary } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TransactionTable } from "@/components/TransactionTable";
-
-function formatJPY(n: number): string {
-  return n.toLocaleString("ja-JP", {
-    style: "currency",
-    currency: "JPY",
-    maximumFractionDigits: 0,
-  });
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-}
-
-function methodLabel(method: string): string {
-  return method === "moving_average" ? "移動平均法" : "総平均法";
-}
+import { BreakdownTables } from "@/components/BreakdownTables";
+import { formatJPY, formatDate, methodLabel } from "@/lib/format";
 
 function reportTitle(s: SessionSummary): string {
   if (s.tax_year) return `${s.tax_year}年度 損益計算レポート`;
@@ -41,6 +24,7 @@ export function HistoryList() {
   const [error, setError] = useState<string | null>(null);
   const [downloadingCsv, setDownloadingCsv] = useState<number | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState<number | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   useEffect(() => {
     getHistory()
@@ -53,13 +37,14 @@ export function HistoryList() {
 
   async function handleDownloadCSV(s: SessionSummary) {
     setDownloadingCsv(s.id);
+    setDownloadError(null);
     try {
       const d = detail?.id === s.id ? detail : await getSessionDetail(s.id);
       const blob = await downloadCSV({ transactions: d.transactions, method: d.calc_method as CalcMethod });
       const year = s.tax_year ?? new Date(s.created_at).getFullYear();
       triggerDownload(blob, `zeitan_${year}年度_損益計算.csv`);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "CSVダウンロードに失敗しました");
+      setDownloadError(e instanceof Error ? e.message : "CSVダウンロードに失敗しました");
     } finally {
       setDownloadingCsv(null);
     }
@@ -67,13 +52,14 @@ export function HistoryList() {
 
   async function handleDownloadPDF(s: SessionSummary) {
     setDownloadingPdf(s.id);
+    setDownloadError(null);
     try {
       const d = detail?.id === s.id ? detail : await getSessionDetail(s.id);
       const blob = await downloadPDF({ transactions: d.transactions, method: d.calc_method as CalcMethod });
       const year = s.tax_year ?? new Date(s.created_at).getFullYear();
       triggerDownload(blob, `zeitan_${year}年度_損益計算.pdf`);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "PDFダウンロードに失敗しました");
+      setDownloadError(e instanceof Error ? e.message : "PDFダウンロードに失敗しました");
     } finally {
       setDownloadingPdf(null);
     }
@@ -87,11 +73,12 @@ export function HistoryList() {
     }
     setExpandedId(id);
     setDetailLoading(true);
+    setDownloadError(null);
     try {
       const d = await getSessionDetail(id);
       setDetail(d);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "詳細の取得に失敗しました");
+      setDownloadError(e instanceof Error ? e.message : "詳細の取得に失敗しました");
     } finally {
       setDetailLoading(false);
     }
@@ -104,12 +91,24 @@ export function HistoryList() {
       <div className="text-center py-16 text-muted-foreground">
         <p className="text-4xl mb-3">📂</p>
         <p className="font-medium">計算履歴がまだありません</p>
-        <p className="text-sm mt-1">CSVをアップロードして損益計算を実行してください</p>
+        <p className="text-sm mt-1 mb-4">CSVをアップロードして損益計算を実行してください</p>
+        <Link
+          href="/"
+          className="inline-block text-sm font-medium text-blue-600 hover:text-blue-800 border border-blue-300 rounded-lg px-4 py-2 hover:bg-blue-50 transition-colors"
+        >
+          計算ページへ →
+        </Link>
       </div>
     );
 
   return (
     <div className="space-y-4">
+      {downloadError && (
+        <div className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          <span>{downloadError}</span>
+          <button onClick={() => setDownloadError(null)} aria-label="エラーメッセージを閉じる" className="ml-4 text-red-400 hover:text-red-600 font-medium">✕</button>
+        </div>
+      )}
       {sessions.map((s) => {
         const isExpanded = expandedId === s.id;
         const isProfit = s.total_profit_loss >= 0;
@@ -188,10 +187,7 @@ export function HistoryList() {
             </div>
 
             {/* ── フッター（詳細トグル） ── */}
-            <div className="px-5 py-2.5 bg-slate-50 flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">
-                ID: #{s.id}
-              </span>
+            <div className="px-5 py-2.5 bg-slate-50 flex items-center justify-end">
               <button
                 onClick={() => toggleDetail(s.id)}
                 className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition-colors"
@@ -206,7 +202,10 @@ export function HistoryList() {
                 {detailLoading ? (
                   <p className="text-sm text-muted-foreground text-center py-4">読み込み中...</p>
                 ) : detail ? (
-                  <TransactionTable results={detail.results} />
+                  <div className="space-y-4">
+                    <BreakdownTables results={detail.results} />
+                    <TransactionTable results={detail.results} />
+                  </div>
                 ) : null}
               </div>
             )}

@@ -12,14 +12,20 @@ interface DownloadButtonsProps {
 export function DownloadButtons({ request }: DownloadButtonsProps) {
   const [loadingCsv, setLoadingCsv] = useState(false);
   const [loadingPdf, setLoadingPdf] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function todayStr() {
+    return new Date().toISOString().slice(0, 10);
+  }
 
   async function handleCSV() {
     setLoadingCsv(true);
+    setError(null);
     try {
       const blob = await downloadCSV(request);
-      triggerDownload(blob, "zeitan_report.csv");
+      triggerDownload(blob, `zeitan_${todayStr()}_損益計算.csv`);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "CSVダウンロードに失敗しました");
+      setError(err instanceof Error ? err.message : "CSVダウンロードに失敗しました");
     } finally {
       setLoadingCsv(false);
     }
@@ -27,24 +33,30 @@ export function DownloadButtons({ request }: DownloadButtonsProps) {
 
   async function handlePDF() {
     setLoadingPdf(true);
+    setError(null);
     try {
       const blob = await downloadPDF(request);
-      triggerDownload(blob, "zeitan_report.pdf");
+      triggerDownload(blob, `zeitan_${todayStr()}_損益計算.pdf`);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "PDFダウンロードに失敗しました");
+      setError(err instanceof Error ? err.message : "PDFダウンロードに失敗しました");
     } finally {
       setLoadingPdf(false);
     }
   }
 
   return (
-    <div className="flex gap-3">
-      <Button variant="outline" onClick={handleCSV} disabled={loadingCsv}>
-        {loadingCsv ? "ダウンロード中..." : "CSV ダウンロード"}
-      </Button>
-      <Button variant="outline" onClick={handlePDF} disabled={loadingPdf}>
-        {loadingPdf ? "ダウンロード中..." : "PDF ダウンロード"}
-      </Button>
+    <div className="space-y-2">
+      <div className="flex gap-3">
+        <Button variant="outline" onClick={handleCSV} disabled={loadingCsv}>
+          {loadingCsv ? "ダウンロード中..." : "CSV ダウンロード"}
+        </Button>
+        <Button variant="outline" onClick={handlePDF} disabled={loadingPdf}>
+          {loadingPdf ? "ダウンロード中..." : "PDF ダウンロード"}
+        </Button>
+      </div>
+      {error && (
+        <p className="text-sm text-destructive">{error}</p>
+      )}
     </div>
   );
 }

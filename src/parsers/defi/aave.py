@@ -1,11 +1,11 @@
 """Aave Lending Protocol Parser."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
-from ..base import BaseParser, TransactionFormat
+from ..base import BaseParser, TransactionFormat, utc_to_jst
 
 
 class AaveParser(BaseParser):
@@ -50,11 +50,11 @@ class AaveParser(BaseParser):
             price_usd = float(row.get("Price USD", 0))
             fee = float(row.get("Fee", 0))
 
-            # タイムスタンプをパース
+            # タイムスタンプをパース（UTC → JST 変換）
             try:
-                timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+                timestamp = utc_to_jst(datetime.fromisoformat(timestamp_str.replace("Z", "+00:00")))
             except ValueError:
-                timestamp = datetime.fromtimestamp(float(timestamp_str))
+                timestamp = utc_to_jst(datetime.fromtimestamp(float(timestamp_str), tz=timezone.utc))
 
             # symbolは "Asset/JPY" の形式（仮にJPY建て）
             symbol = f"{asset}/JPY"

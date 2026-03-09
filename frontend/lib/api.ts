@@ -62,6 +62,12 @@ export async function getSessionDetail(id: number): Promise<SessionDetail> {
   return handleResponse<SessionDetail>(res);
 }
 
+export async function getDashboard(sessionId?: number): Promise<import("./types").DashboardData> {
+  const url = sessionId ? `/api/dashboard?session_id=${sessionId}` : "/api/dashboard";
+  const res = await fetch(url);
+  return handleResponse<import("./types").DashboardData>(res);
+}
+
 export function triggerDownload(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

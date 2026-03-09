@@ -1,11 +1,11 @@
 """OpenSea NFT Marketplace Parser."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
-from ..base import BaseParser, TransactionFormat
+from ..base import BaseParser, TransactionFormat, utc_to_jst
 
 
 class OpenSeaParser(BaseParser):
@@ -55,11 +55,11 @@ class OpenSeaParser(BaseParser):
             gas_fee = float(row.get("Gas Fee", 0))
             token_id = str(row.get("Token ID", ""))
 
-            # タイムスタンプをパース
+            # タイムスタンプをパース（UTC → JST 変換）
             try:
-                timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+                timestamp = utc_to_jst(datetime.fromisoformat(timestamp_str.replace("Z", "+00:00")))
             except ValueError:
-                timestamp = datetime.fromtimestamp(float(timestamp_str))
+                timestamp = utc_to_jst(datetime.fromtimestamp(float(timestamp_str), tz=timezone.utc))
 
             # symbolは "Collection/NFT" の形式
             # NFT名があればそれを使用、なければToken IDを使用

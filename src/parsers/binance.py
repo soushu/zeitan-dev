@@ -1,11 +1,10 @@
 """BinanceのCSVパーサー."""
 
-from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 
-from .base import BaseParser, TransactionFormat
+from .base import BaseParser, TransactionFormat, utc_to_jst
 
 
 class BinanceParser(BaseParser):
@@ -43,9 +42,9 @@ class BinanceParser(BaseParser):
         transactions: list[TransactionFormat] = []
 
         for _, row in df.iterrows():
-            # 日時のパース（UTC）
+            # 日時のパース（UTC → JST 変換）
             date_str = str(row["Date(UTC)"])
-            timestamp = pd.to_datetime(date_str).to_pydatetime()
+            timestamp = utc_to_jst(pd.to_datetime(date_str, utc=True).to_pydatetime())
 
             # 通貨ペアの変換（BTCUSDT → BTC/USDT）
             pair = str(row["Pair"])

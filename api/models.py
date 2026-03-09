@@ -98,3 +98,45 @@ class SessionDetail(SessionSummary):
 
     transactions: list[TransactionResponse]
     results: list[TradeResultResponse]
+
+
+class CurrencyBreakdown(BaseModel):
+    """通貨別損益内訳."""
+
+    symbol: str
+    profit_loss: float
+    transaction_count: int
+    sell_count: int
+    buy_count: int
+
+
+class ExchangeBreakdown(BaseModel):
+    """取引所別損益内訳."""
+
+    exchange: str
+    profit_loss: float
+    transaction_count: int
+
+
+class MonthlyBreakdown(BaseModel):
+    """月別損益内訳."""
+
+    year_month: str        # "2024-01"
+    profit_loss: float
+    sell_count: int
+
+
+class DashboardResponse(BaseModel):
+    """ダッシュボードレスポンス."""
+
+    session_id: int
+    tax_year: Optional[int]
+    calc_method: str
+    total_profit_loss: float
+    transaction_count: int
+    sell_count: int
+    buy_count: int
+    by_currency: list[CurrencyBreakdown]
+    by_exchange: list[ExchangeBreakdown]
+    by_month: list[MonthlyBreakdown]
+    available_sessions: list[SessionSummary]

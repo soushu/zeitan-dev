@@ -1,11 +1,11 @@
 """KrakenのCSVパーサー."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
-from .base import BaseParser, TransactionFormat
+from .base import BaseParser, TransactionFormat, utc_to_jst
 
 
 class KrakenParser(BaseParser):
@@ -55,15 +55,19 @@ class KrakenParser(BaseParser):
             time_col = "time" if "time" in df.columns else "txid"
             time_str = str(row[time_col])
             try:
-                # Unix timestampの場合
+                # Unix timestamp の場合（Kraken は UTC 基準）
                 if time_str.isdigit():
-                    timestamp = datetime.fromtimestamp(float(time_str))
+                    timestamp = utc_to_jst(
+                        datetime.fromtimestamp(float(time_str), tz=timezone.utc)
+                    )
                 else:
-                    # ISO formatの場合
-                    timestamp = pd.to_datetime(time_str).to_pydatetime()
+                    # ISO format の場合（UTC → JST 変換）
+                    timestamp = utc_to_jst(
+                        pd.to_datetime(time_str, utc=True).to_pydatetime()
+                    )
             except Exception:
-                # パースできない場合は現在時刻
-                timestamp = datetime.now()
+                # タイムスタンプが読めない行は税務計算に使えないためスキップ
+                continue
 
             # 通貨ペア
             if "pair" in df.columns:

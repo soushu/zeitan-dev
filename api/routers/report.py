@@ -67,13 +67,14 @@ async def generate_csv_report(request: CalculateRequest):
             "price": "価格（円）",
             "fee": "手数料（円）",
             "profit_loss": "損益（円）",
-            "average_cost_after": "平均取得原価（円）",
+            "average_cost_after": "平均取得原価（円）",  # 移動平均法
+            "average_cost_used": "平均取得原価（円）",   # 総平均法
         }
         df = df.rename(columns={k: v for k, v in column_map.items() if k in df.columns})
 
-        # CSVバイナリ生成
+        # CSVバイナリ生成（utf-8-sig = BOM付きUTF-8、Excelで文字化けしない）
         csv_buffer = io.StringIO()
-        df.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
+        df.to_csv(csv_buffer, index=False)
         csv_bytes = csv_buffer.getvalue().encode("utf-8-sig")
 
         return StreamingResponse(

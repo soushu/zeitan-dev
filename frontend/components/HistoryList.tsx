@@ -7,6 +7,7 @@ import type { CalcMethod, SessionDetail, SessionSummary } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TransactionTable } from "@/components/TransactionTable";
+import { BreakdownTables } from "@/components/BreakdownTables";
 import { formatJPY, formatDate, methodLabel } from "@/lib/format";
 
 function reportTitle(s: SessionSummary): string {
@@ -201,7 +202,10 @@ export function HistoryList() {
                 {detailLoading ? (
                   <p className="text-sm text-muted-foreground text-center py-4">読み込み中...</p>
                 ) : detail ? (
-                  <TransactionTable results={detail.results} />
+                  <div className="space-y-4">
+                    <BreakdownTables results={detail.results} />
+                    <TransactionTable results={detail.results} />
+                  </div>
                 ) : null}
               </div>
             )}

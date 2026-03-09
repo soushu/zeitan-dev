@@ -9,6 +9,7 @@ import type {
   CalculateResponseWithSession,
   TransactionResponse,
 } from "@/lib/types";
+import { BreakdownTables } from "@/components/BreakdownTables";
 import { CalcMethodSelector } from "@/components/CalcMethodSelector";
 import { DownloadButtons } from "@/components/DownloadButtons";
 import { FileUploader } from "@/components/FileUploader";
@@ -172,6 +173,8 @@ export default function Home() {
               <ResultMetrics result={result} />
             </CardContent>
           </Card>
+
+          <BreakdownTables results={result.results} />
 
           <Card>
             <CardHeader>

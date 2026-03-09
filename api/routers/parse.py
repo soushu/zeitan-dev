@@ -85,12 +85,12 @@ async def parse_csv(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="ファイル名が必要です")
 
     # 一時ファイルとして保存
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as temp_file:
-            content = await file.read()
-            temp_file.write(content)
-            temp_path = Path(temp_file.name)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as temp_file:
+        content = await file.read()
+        temp_file.write(content)
+        temp_path = Path(temp_file.name)
 
+    try:
         # 取引所を自動検出
         exchange = detect_exchange(temp_path)
         if not exchange:
@@ -102,9 +102,6 @@ async def parse_csv(file: UploadFile = File(...)):
         # パース
         parser = PARSERS[exchange]
         transactions = parser.parse(temp_path)
-
-        # 一時ファイルを削除
-        temp_path.unlink()
 
         # レスポンス形式に変換
         return [
@@ -124,3 +121,6 @@ async def parse_csv(file: UploadFile = File(...)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"パースエラー: {str(e)}")
+    finally:
+        # 例外・正常終了どちらでも一時ファイルを確実に削除
+        temp_path.unlink(missing_ok=True)

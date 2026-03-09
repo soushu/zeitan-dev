@@ -17,15 +17,40 @@
 """
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TypedDict
 
+# 日本標準時（UTC+9）
+JST = timezone(timedelta(hours=9))
+
+
+def utc_to_jst(dt: datetime) -> datetime:
+    """UTC datetime（naive または aware）を JST の naive datetime に変換する.
+
+    海外取引所（Binance, Bybit, Coinbase, Kraken など）が UTC で出力する
+    タイムスタンプを、日本の税務計算基準である JST に統一する。
+
+    Args:
+        dt: UTC の datetime。tzinfo がない場合は UTC として扱う。
+
+    Returns:
+        JST に変換した naive datetime（tzinfo=None）。
+    """
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(JST).replace(tzinfo=None)
+
 
 class TransactionFormat(TypedDict):
-    """標準取引レコード形式（全パーサーの共通出力）."""
+    """標準取引レコード形式（全パーサーの共通出力）.
 
-    timestamp: datetime
+    timestamp は常に **JST の naive datetime**（tzinfo=None）。
+    - 国内取引所（bitFlyer/Coincheck/bitbank/GMO 等）: CSV が JST 出力のためそのまま使用。
+    - 海外取引所（Binance/Bybit/Coinbase/Kraken 等）: UTC → JST に変換してから格納。
+    """
+
+    timestamp: datetime  # JST naive datetime (tzinfo=None)
     exchange: str
     symbol: str
     type: str  # 'buy', 'sell', 'airdrop', 'fork', 'reward', 'transfer_in', 'transfer_out', 'swap', 'liquidity_add', 'liquidity_remove', 'lending', 'nft_buy', 'nft_sell'

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import Link from "next/link";
+import { NavLinks } from "@/components/NavLinks";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"] });
@@ -21,20 +22,7 @@ export default function RootLayout({
             <Link href="/" className="text-lg font-bold tracking-tight">
               Zeitan
             </Link>
-            <nav className="flex gap-6 text-sm font-medium">
-              <Link
-                href="/"
-                className="text-muted-foreground transition-colors hover:text-foreground"
-              >
-                計算
-              </Link>
-              <Link
-                href="/history"
-                className="text-muted-foreground transition-colors hover:text-foreground"
-              >
-                履歴
-              </Link>
-            </nav>
+            <NavLinks />
           </div>
         </header>
         <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>

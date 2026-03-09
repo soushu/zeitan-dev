@@ -54,7 +54,9 @@ export function FileUploader({ onTransactions }: FileUploaderProps) {
     const updated = [...parsedFiles, ...results];
     setParsedFiles(updated);
 
-    const allTransactions = updated.flatMap((pf) => pf.transactions);
+    const allTransactions = updated
+      .filter((pf) => !pf.error)
+      .flatMap((pf) => pf.transactions);
     onTransactions(allTransactions);
     setIsLoading(false);
   }

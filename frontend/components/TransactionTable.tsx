@@ -12,16 +12,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { formatDate } from "@/lib/format";
 
 interface TransactionTableProps {
   results: TradeResultResponse[];
 }
 
 const PAGE_SIZE = 20;
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("ja-JP");
-}
 
 function formatNumber(n: number): string {
   return n.toLocaleString("ja-JP", { maximumFractionDigits: 8 });
@@ -78,12 +75,18 @@ export function TransactionTable({ results }: TransactionTableProps) {
                 </TableCell>
                 <TableCell
                   className={`text-right font-medium ${
-                    r.profit_loss >= 0 ? "text-green-600" : "text-red-600"
+                    r.profit_loss > 0
+                      ? "text-green-600"
+                      : r.profit_loss < 0
+                      ? "text-red-600"
+                      : "text-muted-foreground"
                   }`}
                 >
-                  {r.profit_loss !== 0
-                    ? (r.profit_loss >= 0 ? "+" : "") + formatJPY(r.profit_loss)
-                    : "-"}
+                  {r.profit_loss > 0
+                    ? "+" + formatJPY(r.profit_loss)
+                    : r.profit_loss < 0
+                    ? formatJPY(r.profit_loss)
+                    : "－"}
                 </TableCell>
               </TableRow>
             ))}
@@ -94,9 +97,8 @@ export function TransactionTable({ results }: TransactionTableProps) {
       {totalPages > 1 && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            {page * PAGE_SIZE + 1}〜
-            {Math.min((page + 1) * PAGE_SIZE, results.length)} /{" "}
-            {results.length} 件
+            {page + 1} / {totalPages} ページ
+            &nbsp;({page * PAGE_SIZE + 1}〜{Math.min((page + 1) * PAGE_SIZE, results.length)} / {results.length} 件)
           </span>
           <div className="flex gap-2">
             <Button

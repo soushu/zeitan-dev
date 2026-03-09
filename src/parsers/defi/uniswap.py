@@ -1,11 +1,11 @@
 """Uniswap DEX Parser."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
-from ..base import BaseParser, TransactionFormat
+from ..base import BaseParser, TransactionFormat, utc_to_jst
 
 
 class UniswapParser(BaseParser):
@@ -52,13 +52,13 @@ class UniswapParser(BaseParser):
             price_usd = float(row.get("Price USD", 0))
             fee = float(row.get("Fee", 0))
 
-            # タイムスタンプをパース
+            # タイムスタンプをパース（UTC → JST 変換）
             try:
-                # ISO 8601形式をパース
-                timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+                # ISO 8601形式をパース（UTC aware → JST naive）
+                timestamp = utc_to_jst(datetime.fromisoformat(timestamp_str.replace("Z", "+00:00")))
             except ValueError:
-                # Unix timestampの場合
-                timestamp = datetime.fromtimestamp(float(timestamp_str))
+                # Unix timestampの場合（UTC基準で変換）
+                timestamp = utc_to_jst(datetime.fromtimestamp(float(timestamp_str), tz=timezone.utc))
 
             # Swap取引（売却）を記録
             # symbolは "TokenIn/TokenOut" の形式

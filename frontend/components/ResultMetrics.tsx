@@ -1,16 +1,9 @@
 import type { CalculateResponseWithSession } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatJPY } from "@/lib/format";
 
 interface ResultMetricsProps {
   result: CalculateResponseWithSession;
-}
-
-function formatJPY(value: number): string {
-  return value.toLocaleString("ja-JP", {
-    style: "currency",
-    currency: "JPY",
-    maximumFractionDigits: 0,
-  });
 }
 
 export function ResultMetrics({ result }: ResultMetricsProps) {
@@ -18,15 +11,11 @@ export function ResultMetrics({ result }: ResultMetricsProps) {
     (r) => r.type.toLowerCase() === "sell"
   ).length;
 
-  const miscIncome = result.results
-    .filter((r) => r.type.toLowerCase() !== "sell")
-    .reduce((sum, r) => sum + r.profit_loss, 0);
+  const estimatedTax = result.total_profit_loss > 0
+    ? Math.round(result.total_profit_loss * 0.2)
+    : null;
 
   const metrics = [
-    {
-      title: "総取引件数",
-      value: `${result.results.length.toLocaleString()} 件`,
-    },
     {
       title: "総損益",
       value: formatJPY(result.total_profit_loss),
@@ -34,13 +23,19 @@ export function ResultMetrics({ result }: ResultMetricsProps) {
       positive: result.total_profit_loss >= 0,
     },
     {
-      title: "売却件数",
-      value: `${sellCount.toLocaleString()} 件`,
+      title: "概算税額（目安）",
+      value: estimatedTax != null ? formatJPY(estimatedTax) : "－",
+      sub: "税率20%で試算",
+      highlight: estimatedTax != null,
+      positive: false,
     },
     {
-      title: "雑所得",
-      value: formatJPY(miscIncome),
-      positive: miscIncome >= 0,
+      title: "総取引件数",
+      value: `${result.results.length.toLocaleString()} 件`,
+    },
+    {
+      title: "売却件数",
+      value: `${sellCount.toLocaleString()} 件`,
     },
   ];
 
@@ -65,6 +60,9 @@ export function ResultMetrics({ result }: ResultMetricsProps) {
             >
               {m.value}
             </p>
+            {"sub" in m && m.sub && (
+              <p className="text-xs text-muted-foreground mt-1">{m.sub}</p>
+            )}
           </CardContent>
         </Card>
       ))}

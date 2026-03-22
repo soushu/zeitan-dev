@@ -62,6 +62,11 @@ export async function getSessionDetail(id: number): Promise<SessionDetail> {
   return handleResponse<SessionDetail>(res);
 }
 
+export async function getAlerts(sessionId: number): Promise<import("./types").AlertsResponse> {
+  const res = await fetch(`/api/alerts/${sessionId}`);
+  return handleResponse<import("./types").AlertsResponse>(res);
+}
+
 export async function getDashboard(sessionId?: number): Promise<import("./types").DashboardData> {
   const url = sessionId ? `/api/dashboard?session_id=${sessionId}` : "/api/dashboard";
   const res = await fetch(url);

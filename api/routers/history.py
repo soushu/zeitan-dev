@@ -4,8 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from api.models import SessionDetail, SessionSummary, TradeResultResponse, TransactionResponse
+from api.models import AlertItem, AlertsResponse, SessionDetail, SessionSummary, TradeResultResponse, TransactionResponse
 from src.models.orm import Transaction
+from src.parsers.base import TransactionFormat
+from src.utils.alert_detector import detect_alerts
 from src.utils.database import get_db
 from src.utils.db_service import get_session_detail, get_sessions
 
@@ -83,4 +85,34 @@ async def get_history_detail(session_id: int, db: Session = Depends(get_db)):
             )
             for r in session.results
         ],
+    )
+
+
+@router.get("/alerts/{session_id}", response_model=AlertsResponse)
+async def get_session_alerts(session_id: int, db: Session = Depends(get_db)):
+    """指定セッションの取引データから問題取引を検出する."""
+    session = get_session_detail(db, session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail=f"セッション {session_id} が見つかりません")
+
+    transactions: list[TransactionFormat] = [
+        TransactionFormat(
+            timestamp=tx.timestamp,
+            exchange=tx.exchange,
+            symbol=tx.symbol,
+            type=tx.type,
+            amount=tx.amount,
+            price=tx.price,
+            fee=tx.fee,
+        )
+        for tx in sorted(session.transactions, key=lambda t: t.timestamp)
+    ]
+
+    raw_alerts = detect_alerts(transactions)
+    alerts = [AlertItem(**a) for a in raw_alerts]
+
+    return AlertsResponse(
+        alerts=alerts,
+        has_errors=any(a.severity == "error" for a in alerts),
+        has_warnings=any(a.severity == "warning" for a in alerts),
     )

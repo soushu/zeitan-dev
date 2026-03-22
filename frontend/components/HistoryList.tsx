@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { downloadCSV, downloadPDF, getHistory, getSessionDetail, triggerDownload } from "@/lib/api";
 import type { CalcMethod, SessionDetail, SessionSummary } from "@/lib/types";
+import { AlertBanner } from "@/components/AlertBanner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TransactionTable } from "@/components/TransactionTable";
@@ -203,6 +204,7 @@ export function HistoryList() {
                   <p className="text-sm text-muted-foreground text-center py-4">読み込み中...</p>
                 ) : detail ? (
                   <div className="space-y-4">
+                    <AlertBanner sessionId={s.id} />
                     <BreakdownTables results={detail.results} />
                     <TransactionTable results={detail.results} />
                   </div>

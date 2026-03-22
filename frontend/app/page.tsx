@@ -9,6 +9,7 @@ import type {
   CalculateResponseWithSession,
   TransactionResponse,
 } from "@/lib/types";
+import { AlertBanner } from "@/components/AlertBanner";
 import { BreakdownTables } from "@/components/BreakdownTables";
 import { CalcMethodSelector } from "@/components/CalcMethodSelector";
 import { DownloadButtons } from "@/components/DownloadButtons";
@@ -165,6 +166,8 @@ export default function Home() {
       {/* Step C: Results */}
       {step === "result" && result && (
         <>
+          <AlertBanner sessionId={result.session_id} />
+
           <Card>
             <CardHeader>
               <CardTitle>計算結果</CardTitle>

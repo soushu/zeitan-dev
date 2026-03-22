@@ -32,9 +32,9 @@ function KpiCard({ label, value, sub, accent }: {
     blue: "text-blue-600",
   };
   return (
-    <div className="rounded-xl border bg-white p-5 shadow-sm">
+    <div className="rounded-xl border bg-white p-3 sm:p-5 shadow-sm">
       <p className="text-xs text-slate-500 mb-1">{label}</p>
-      <p className={`text-2xl font-bold tracking-tight ${accent ? colors[accent] : "text-slate-800"}`}>
+      <p className={`text-lg sm:text-2xl font-bold tracking-tight ${accent ? colors[accent] : "text-slate-800"}`}>
         {value}
       </p>
       {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
@@ -108,13 +108,13 @@ function MonthlyChart({ data }: { data: DashboardData["by_month"] }) {
 
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <BarChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+      <BarChart data={chartData} margin={{ top: 4, right: 4, left: -10, bottom: 4 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-        <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94a3b8" }} />
+        <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#94a3b8" }} />
         <YAxis
           tickFormatter={(v) => `¥${(v / 10000).toFixed(0)}万`}
           tick={{ fontSize: 10, fill: "#94a3b8" }}
-          width={60}
+          width={50}
         />
         <Tooltip
           formatter={(value: number | undefined) => [value != null ? formatJPY(value) : "－", "損益"]}
@@ -280,7 +280,7 @@ export function DashboardClient() {
       {/* ── ページヘッダー + セレクター ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">ダッシュボード</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">ダッシュボード</h1>
           <p className="text-sm text-slate-500 mt-0.5">
             {data.tax_year ? `${data.tax_year}年度` : "最新"} の損益サマリー
           </p>
@@ -329,7 +329,7 @@ export function DashboardClient() {
 
       {/* ── 月別損益グラフ ── */}
       {data.by_month.length > 0 && (
-        <div className="rounded-xl border bg-white p-5 shadow-sm">
+        <div className="rounded-xl border bg-white p-3 sm:p-5 shadow-sm">
           <SectionHeading>月別 損益推移</SectionHeading>
           <MonthlyChart data={data.by_month} />
         </div>
@@ -338,13 +338,13 @@ export function DashboardClient() {
       {/* ── 通貨別 + 取引所別（2カラム） ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {data.by_currency.length > 0 && (
-          <div className="rounded-xl border bg-white p-5 shadow-sm">
+          <div className="rounded-xl border bg-white p-3 sm:p-5 shadow-sm">
             <SectionHeading>通貨別 損益内訳</SectionHeading>
             <CurrencyTable data={data.by_currency} />
           </div>
         )}
         {data.by_exchange.length > 0 && (
-          <div className="rounded-xl border bg-white p-5 shadow-sm">
+          <div className="rounded-xl border bg-white p-3 sm:p-5 shadow-sm">
             <SectionHeading>取引所別 損益内訳</SectionHeading>
             <ExchangeTable data={data.by_exchange} />
           </div>

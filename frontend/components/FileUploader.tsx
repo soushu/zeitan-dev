@@ -92,7 +92,7 @@ export function FileUploader({ onTransactions }: FileUploaderProps) {
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
-        className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-10 cursor-pointer transition-colors
+        className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 sm:p-10 cursor-pointer transition-colors
           ${isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/30"}`}
       >
         <input
@@ -103,7 +103,7 @@ export function FileUploader({ onTransactions }: FileUploaderProps) {
           className="hidden"
           onChange={handleChange}
         />
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs sm:text-sm text-muted-foreground text-center">
           CSVファイルをドラッグ&ドロップ、またはクリックして選択
         </p>
         <p className="mt-1 text-xs text-muted-foreground/60">
@@ -115,7 +115,8 @@ export function FileUploader({ onTransactions }: FileUploaderProps) {
       </div>
 
       {parsedFiles.length > 0 && (
-        <Table>
+        <div className="overflow-x-auto">
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead>ファイル名</TableHead>
@@ -127,7 +128,7 @@ export function FileUploader({ onTransactions }: FileUploaderProps) {
           <TableBody>
             {parsedFiles.map((pf, i) => (
               <TableRow key={i}>
-                <TableCell className="font-medium">{pf.file.name}</TableCell>
+                <TableCell className="font-medium max-w-[150px] sm:max-w-none truncate">{pf.file.name}</TableCell>
                 <TableCell>
                   {pf.error ? (
                     <Badge variant="destructive">エラー</Badge>
@@ -158,7 +159,8 @@ export function FileUploader({ onTransactions }: FileUploaderProps) {
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       )}
     </div>
   );

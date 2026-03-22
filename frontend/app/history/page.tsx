@@ -8,7 +8,7 @@ export default function HistoryPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">計算履歴</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">計算履歴</h1>
         <p className="text-sm text-muted-foreground">
           過去の損益計算セッションを確認できます
         </p>

@@ -18,14 +18,14 @@ export default function RootLayout({
     <html lang="ja" suppressHydrationWarning>
       <body className={`${geist.className} min-h-screen bg-background antialiased`}>
         <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
-          <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-            <Link href="/" className="text-lg font-bold tracking-tight">
+          <div className="relative mx-auto flex h-12 sm:h-14 max-w-5xl items-center justify-between px-4">
+            <Link href="/" className="text-base sm:text-lg font-bold tracking-tight">
               Zeitan
             </Link>
             <NavLinks />
           </div>
         </header>
-        <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+        <main className="mx-auto max-w-5xl px-3 sm:px-4 py-4 sm:py-8">{children}</main>
       </body>
     </html>
   );

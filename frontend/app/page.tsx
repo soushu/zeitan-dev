@@ -66,14 +66,14 @@ export default function Home() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">暗号資産 損益計算</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">暗号資産 損益計算</h1>
         <p className="text-sm text-muted-foreground">
           CSVをアップロードして税金計算を行います
         </p>
       </div>
 
       {/* Step indicator */}
-      <div className="flex items-center gap-2 text-sm">
+      <div className="flex items-center gap-2 text-xs sm:text-sm">
         {(["upload", "calculate", "result"] as Step[]).map((s, i) => {
           const labels: Record<Step, string> = {
             upload: "1. アップロード",
@@ -178,7 +178,7 @@ export default function Home() {
 
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <CardTitle>取引一覧</CardTitle>
                 {calcRequest && <DownloadButtons request={calcRequest} />}
               </div>

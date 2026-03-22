@@ -40,7 +40,7 @@ export function ResultMetrics({ result }: ResultMetricsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
       {metrics.map((m) => (
         <Card key={m.title}>
           <CardHeader className="pb-2">

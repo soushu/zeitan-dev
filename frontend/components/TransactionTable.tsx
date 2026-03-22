@@ -35,8 +35,8 @@ export function TransactionTable({ results }: TransactionTableProps) {
 
   return (
     <div className="space-y-2">
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border overflow-x-auto">
+        <Table className="min-w-[600px]">
           <TableHeader>
             <TableRow>
               <TableHead>日時</TableHead>
@@ -95,7 +95,7 @@ export function TransactionTable({ results }: TransactionTableProps) {
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-sm text-muted-foreground">
           <span>
             {page + 1} / {totalPages} ページ
             &nbsp;({page * PAGE_SIZE + 1}〜{Math.min((page + 1) * PAGE_SIZE, results.length)} / {results.length} 件)

@@ -24,11 +24,11 @@ export function CalcMethodSelector({ value, onChange }: CalcMethodSelectorProps)
   return (
     <div className="space-y-2">
       <p className="text-sm font-medium">計算方法</p>
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
         {METHODS.map((m) => (
           <label
             key={m.value}
-            className={`flex flex-1 cursor-pointer flex-col gap-1 rounded-lg border p-4 transition-colors
+            className={`flex flex-1 cursor-pointer flex-col gap-1 rounded-lg border p-3 sm:p-4 transition-colors
               ${value === m.value ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
           >
             <input

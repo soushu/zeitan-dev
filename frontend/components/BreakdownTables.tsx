@@ -130,7 +130,7 @@ function ExchangeTable({ data }: { data: ExchangeBreakdown[] }) {
                 <td className="py-2 text-right text-slate-600 tabular-nums">{row.transaction_count}</td>
                 <td className="py-2 pl-4">
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-slate-200 rounded-full h-1.5 w-20">
+                    <div className="flex-1 bg-slate-200 rounded-full h-1.5 w-16 sm:w-20">
                       <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
                     </div>
                     <span className="text-xs text-slate-500 w-8 text-right">{pct}%</span>
@@ -165,7 +165,7 @@ export function BreakdownTables({ results }: BreakdownTablesProps) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div className="rounded-xl border bg-white p-4 shadow-sm">
+      <div className="rounded-xl border bg-white p-3 sm:p-4 shadow-sm">
         <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
           <span className="w-1 h-4 rounded-full bg-blue-600 inline-block" />
           通貨別 損益内訳
@@ -173,7 +173,7 @@ export function BreakdownTables({ results }: BreakdownTablesProps) {
         <CurrencyTable data={byCurrency} />
       </div>
       {byExchange.length > 1 && (
-        <div className="rounded-xl border bg-white p-4 shadow-sm">
+        <div className="rounded-xl border bg-white p-3 sm:p-4 shadow-sm">
           <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
             <span className="w-1 h-4 rounded-full bg-blue-600 inline-block" />
             取引所別 損益内訳

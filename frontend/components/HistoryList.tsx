@@ -119,7 +119,7 @@ export function HistoryList() {
             className="border rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow"
           >
             {/* ── カードヘッダー（年度バー） ── */}
-            <div className="bg-slate-800 px-5 py-3 flex items-center justify-between">
+            <div className="bg-slate-800 px-3 sm:px-5 py-2 sm:py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
               <div className="flex items-center gap-3">
                 <span className="text-white font-semibold text-sm">
                   {reportTitle(s)}
@@ -137,12 +137,12 @@ export function HistoryList() {
             </div>
 
             {/* ── メトリクス行 ── */}
-            <div className="px-5 py-4 grid grid-cols-3 gap-4 border-b">
+            <div className="px-3 sm:px-5 py-3 sm:py-4 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 border-b">
               {/* 総損益 */}
               <div>
                 <p className="text-xs text-muted-foreground mb-1">総損益</p>
                 <p
-                  className={`text-2xl font-bold tracking-tight ${
+                  className={`text-xl sm:text-2xl font-bold tracking-tight ${
                     isProfit ? "text-emerald-600" : "text-red-500"
                   }`}
                 >
@@ -157,14 +157,14 @@ export function HistoryList() {
               {/* 取引件数 */}
               <div>
                 <p className="text-xs text-muted-foreground mb-1">取引件数</p>
-                <p className="text-2xl font-bold text-slate-800">
+                <p className="text-xl sm:text-2xl font-bold text-slate-800">
                   {s.transaction_count.toLocaleString()}
                   <span className="text-sm font-normal text-muted-foreground ml-1">件</span>
                 </p>
               </div>
 
               {/* ダウンロードボタン */}
-              <div className="flex flex-col gap-2 justify-center">
+              <div className="flex flex-col gap-2 justify-center col-span-2 sm:col-span-1">
                 <Button
                   variant="outline"
                   size="sm"

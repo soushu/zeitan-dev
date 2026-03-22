@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { downloadCSV, downloadPDF, getHistory, getSessionDetail, triggerDownload } from "@/lib/api";
+import { downloadCSV, downloadPDF, getHistory, getSessionDetail, recalculate, triggerDownload } from "@/lib/api";
 import type { CalcMethod, SessionDetail, SessionSummary } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ export function HistoryList() {
   const [error, setError] = useState<string | null>(null);
   const [downloadingCsv, setDownloadingCsv] = useState<number | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState<number | null>(null);
+  const [recalculating, setRecalculating] = useState<number | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -62,6 +63,33 @@ export function HistoryList() {
       setDownloadError(e instanceof Error ? e.message : "PDFダウンロードに失敗しました");
     } finally {
       setDownloadingPdf(null);
+    }
+  }
+
+  async function handleRecalculate(s: SessionSummary) {
+    const alternateMethod: CalcMethod =
+      s.calc_method === "moving_average" ? "total_average" : "moving_average";
+    setRecalculating(s.id);
+    setDownloadError(null);
+    try {
+      const result = await recalculate(s.id, { method: alternateMethod });
+      // 新しいセッションを一覧の先頭に追加
+      const newSession: SessionSummary = {
+        id: result.session_id,
+        created_at: new Date().toISOString(),
+        calc_method: result.method,
+        total_profit_loss: result.total_profit_loss,
+        transaction_count: s.transaction_count,
+        note: null,
+        tax_year: s.tax_year,
+      };
+      setSessions((prev) => [newSession, ...prev]);
+    } catch (e) {
+      setDownloadError(
+        e instanceof Error ? e.message : "再計算に失敗しました"
+      );
+    } finally {
+      setRecalculating(null);
     }
   }
 
@@ -163,8 +191,19 @@ export function HistoryList() {
                 </p>
               </div>
 
-              {/* ダウンロードボタン */}
+              {/* アクションボタン */}
               <div className="flex flex-col gap-2 justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs border-blue-300 text-blue-700 hover:bg-blue-50"
+                  onClick={() => handleRecalculate(s)}
+                  disabled={recalculating === s.id}
+                >
+                  {recalculating === s.id
+                    ? "再計算中..."
+                    : `${s.calc_method === "moving_average" ? "総平均法" : "移動平均法"}で再計算`}
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -172,7 +211,7 @@ export function HistoryList() {
                   onClick={() => handleDownloadCSV(s)}
                   disabled={downloadingCsv === s.id}
                 >
-                  {downloadingCsv === s.id ? "作成中..." : "⬇ CSV ダウンロード"}
+                  {downloadingCsv === s.id ? "作成中..." : "CSV ダウンロード"}
                 </Button>
                 <Button
                   variant="outline"
@@ -181,7 +220,7 @@ export function HistoryList() {
                   onClick={() => handleDownloadPDF(s)}
                   disabled={downloadingPdf === s.id}
                 >
-                  {downloadingPdf === s.id ? "作成中..." : "⬇ PDF ダウンロード"}
+                  {downloadingPdf === s.id ? "作成中..." : "PDF ダウンロード"}
                 </Button>
               </div>
             </div>

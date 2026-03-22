@@ -81,6 +81,10 @@ export interface MonthlyBreakdown {
   sell_count: number;
 }
 
+export interface RecalculateRequest {
+  method: CalcMethod;
+}
+
 export interface DashboardData {
   session_id: number;
   tax_year: number | null;

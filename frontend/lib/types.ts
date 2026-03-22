@@ -85,6 +85,20 @@ export interface RecalculateRequest {
   method: CalcMethod;
 }
 
+export interface AlertItem {
+  type: "oversell" | "no_buy_before_sell" | "duplicate";
+  severity: "error" | "warning";
+  symbol: string;
+  message: string;
+  transaction_index: number | null;
+}
+
+export interface AlertsResponse {
+  alerts: AlertItem[];
+  has_errors: boolean;
+  has_warnings: boolean;
+}
+
 export interface DashboardData {
   session_id: number;
   tax_year: number | null;

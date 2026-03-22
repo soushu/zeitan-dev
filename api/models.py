@@ -134,6 +134,24 @@ class RecalculateRequest(BaseModel):
     )
 
 
+class AlertItem(BaseModel):
+    """問題取引アラート."""
+
+    type: Literal["oversell", "no_buy_before_sell", "duplicate"]
+    severity: Literal["error", "warning"]
+    symbol: str
+    message: str
+    transaction_index: Optional[int] = None
+
+
+class AlertsResponse(BaseModel):
+    """アラートレスポンス."""
+
+    alerts: list[AlertItem]
+    has_errors: bool
+    has_warnings: bool
+
+
 class DashboardResponse(BaseModel):
     """ダッシュボードレスポンス."""
 

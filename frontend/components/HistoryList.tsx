@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { downloadCSV, downloadPDF, getHistory, getSessionDetail, recalculate, triggerDownload } from "@/lib/api";
+import { downloadCSV, downloadPDF, getAvailableYears, getHistory, getSessionDetail, recalculate, triggerDownload } from "@/lib/api";
 import type { CalcMethod, SessionDetail, SessionSummary } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,15 +26,24 @@ export function HistoryList() {
   const [downloadingPdf, setDownloadingPdf] = useState<number | null>(null);
   const [recalculating, setRecalculating] = useState<number | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    getHistory()
+    getAvailableYears().then(setAvailableYears).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    setExpandedId(null);
+    setDetail(null);
+    getHistory(selectedYear)
       .then(setSessions)
       .catch((e) =>
         setError(e instanceof Error ? e.message : "履歴の取得に失敗しました")
       )
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedYear]);
 
   async function handleDownloadCSV(s: SessionSummary) {
     setDownloadingCsv(s.id);
@@ -131,6 +140,30 @@ export function HistoryList() {
 
   return (
     <div className="space-y-4">
+      {/* 年度フィルター */}
+      {availableYears.length > 0 && (
+        <div className="flex items-center gap-3">
+          <label htmlFor="year-filter" className="text-sm font-medium text-slate-700">
+            年度で絞り込み
+          </label>
+          <select
+            id="year-filter"
+            value={selectedYear ?? ""}
+            onChange={(e) =>
+              setSelectedYear(e.target.value ? Number(e.target.value) : undefined)
+            }
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">すべての年度</option>
+            {availableYears.map((y) => (
+              <option key={y} value={y}>
+                {y}年度
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {downloadError && (
         <div className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
           <span>{downloadError}</span>

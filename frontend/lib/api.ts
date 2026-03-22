@@ -65,9 +65,15 @@ export async function downloadPDF(req: CalculateRequest): Promise<Blob> {
   return res.blob();
 }
 
-export async function getHistory(): Promise<SessionSummary[]> {
-  const res = await fetch("/api/history");
+export async function getHistory(year?: number): Promise<SessionSummary[]> {
+  const url = year ? `/api/history?year=${year}` : "/api/history";
+  const res = await fetch(url);
   return handleResponse<SessionSummary[]>(res);
+}
+
+export async function getAvailableYears(): Promise<number[]> {
+  const res = await fetch("/api/history/years");
+  return handleResponse<number[]>(res);
 }
 
 export async function getSessionDetail(id: number): Promise<SessionDetail> {

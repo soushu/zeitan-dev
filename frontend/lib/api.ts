@@ -1,6 +1,7 @@
 import type {
   CalculateRequest,
   CalculateResponseWithSession,
+  RecalculateRequest,
   SessionDetail,
   SessionSummary,
   TransactionResponse,
@@ -25,6 +26,18 @@ export async function calculate(
   req: CalculateRequest
 ): Promise<CalculateResponseWithSession> {
   const res = await fetch("/api/calculate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  return handleResponse<CalculateResponseWithSession>(res);
+}
+
+export async function recalculate(
+  sessionId: number,
+  req: RecalculateRequest
+): Promise<CalculateResponseWithSession> {
+  const res = await fetch(`/api/recalculate/${sessionId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),

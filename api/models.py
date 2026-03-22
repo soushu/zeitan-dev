@@ -126,6 +126,14 @@ class MonthlyBreakdown(BaseModel):
     sell_count: int
 
 
+class RecalculateRequest(BaseModel):
+    """再計算リクエストモデル."""
+
+    method: Literal["moving_average", "total_average"] = Field(
+        description="切り替え先の計算方法",
+    )
+
+
 class DashboardResponse(BaseModel):
     """ダッシュボードレスポンス."""
 

@@ -7,12 +7,14 @@ from api.models import (
     CalculateRequest,
     CalculateResponseWithSession,
     ErrorResponse,
+    RecalculateRequest,
     TradeResultResponse,
 )
 from src.calculators import MovingAverageCalculator, TotalAverageCalculator
+from src.models.orm import Transaction
 from src.parsers.base import TransactionFormat
 from src.utils.database import get_db
-from src.utils.db_service import save_calculation
+from src.utils.db_service import get_session_detail, save_calculation
 
 router = APIRouter()
 
@@ -102,3 +104,86 @@ async def calculate_tax(request: CalculateRequest, db: Session = Depends(get_db)
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"計算エラー: {str(e)}")
+
+
+@router.post(
+    "/recalculate/{session_id}",
+    response_model=CalculateResponseWithSession,
+    responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+)
+async def recalculate(
+    session_id: int,
+    request: RecalculateRequest,
+    db: Session = Depends(get_db),
+):
+    """既存セッションの取引データを別の計算方法で再計算する.
+
+    元のセッションは変更せず、新しいセッションとして保存する。
+    """
+    # 元セッションの取引データを取得
+    original = get_session_detail(db, session_id)
+    if original is None:
+        raise HTTPException(status_code=404, detail="セッションが見つかりません")
+
+    # ORM Transaction → TransactionFormat に変換
+    transactions: list[TransactionFormat] = [
+        TransactionFormat(
+            timestamp=tx.timestamp,
+            exchange=tx.exchange,
+            symbol=tx.symbol,
+            type=tx.type,
+            amount=tx.amount,
+            price=tx.price,
+            fee=tx.fee,
+        )
+        for tx in sorted(original.transactions, key=lambda t: t.timestamp)
+    ]
+
+    # 計算方法を選択
+    if request.method == "moving_average":
+        calculator = MovingAverageCalculator()
+    elif request.method == "total_average":
+        calculator = TotalAverageCalculator()
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"無効な計算方法: {request.method}",
+        )
+
+    try:
+        results = calculator.calculate(transactions)
+        total_pl = calculator.get_total_profit_loss(results)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"再計算エラー: {str(e)}")
+
+    result_responses = [
+        TradeResultResponse(
+            timestamp=r["timestamp"],
+            exchange=r["exchange"],
+            symbol=r["symbol"],
+            type=r["type"],
+            amount=r["amount"],
+            price=r["price"],
+            fee=r["fee"],
+            profit_loss=r["profit_loss"],
+            average_cost_after=r.get("average_cost_after"),
+            average_cost_used=r.get("average_cost_used"),
+        )
+        for r in results
+    ]
+
+    # 新しいセッションとして保存
+    calc_session = save_calculation(
+        db=db,
+        transactions=transactions,
+        results=results,
+        total_profit_loss=total_pl,
+        calc_method=request.method,
+    )
+
+    return CalculateResponseWithSession(
+        results=result_responses,
+        total_profit_loss=total_pl,
+        method=request.method,
+        session_id=calc_session.id,
+    )

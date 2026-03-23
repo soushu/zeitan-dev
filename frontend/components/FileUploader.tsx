@@ -3,19 +3,13 @@
 import { useRef, useState } from "react";
 import { parseCSV } from "@/lib/api";
 import type { TransactionResponse } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import type { ExchangeConfig } from "@/lib/exchange-config";
+import { ExchangeGrid } from "@/components/ExchangeGrid";
+import { ExchangeUploadDialog } from "@/components/ExchangeUploadDialog";
+import { UploadSummaryCards } from "@/components/UploadSummaryCards";
 
 interface ParsedFile {
-  file: File;
+  fileName: string;
   transactions: TransactionResponse[];
   exchange: string;
   error?: string;
@@ -25,11 +19,14 @@ interface FileUploaderProps {
   onTransactions: (transactions: TransactionResponse[]) => void;
 }
 
+type UploaderState = "grid" | "upload" | "done";
+
 export function FileUploader({ onTransactions }: FileUploaderProps) {
+  const [state, setState] = useState<UploaderState>("grid");
+  const [selectedExchange, setSelectedExchange] = useState<ExchangeConfig | null>(null);
   const [parsedFiles, setParsedFiles] = useState<ParsedFile[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const plainInputRef = useRef<HTMLInputElement>(null);
 
   async function processFiles(files: File[]) {
     setIsLoading(true);
@@ -40,12 +37,12 @@ export function FileUploader({ onTransactions }: FileUploaderProps) {
         const transactions = await parseCSV(file);
         const exchange =
           transactions.length > 0 ? transactions[0].exchange : "不明";
-        results.push({ file, transactions, exchange });
+        results.push({ fileName: file.name, transactions, exchange });
       } catch (err) {
         results.push({
-          file,
+          fileName: file.name,
           transactions: [],
-          exchange: "エラー",
+          exchange: selectedExchange?.id ?? "エラー",
           error: err instanceof Error ? err.message : "パースエラー",
         });
       }
@@ -53,6 +50,7 @@ export function FileUploader({ onTransactions }: FileUploaderProps) {
 
     const updated = [...parsedFiles, ...results];
     setParsedFiles(updated);
+    setState("done");
 
     const allTransactions = updated
       .filter((pf) => !pf.error)
@@ -61,106 +59,124 @@ export function FileUploader({ onTransactions }: FileUploaderProps) {
     setIsLoading(false);
   }
 
-  function handleDrop(e: React.DragEvent) {
+  function handleSelectExchange(exchange: ExchangeConfig) {
+    setSelectedExchange(exchange);
+    setState("upload");
+  }
+
+  function handleSkip() {
+    setSelectedExchange(null);
+    setState("upload");
+  }
+
+  function handleBack() {
+    if (parsedFiles.length > 0) {
+      setState("done");
+    } else {
+      setState("grid");
+      setSelectedExchange(null);
+    }
+  }
+
+  function handleRemove(index: number) {
+    const updated = parsedFiles.filter((_, i) => i !== index);
+    setParsedFiles(updated);
+    if (updated.length === 0) {
+      setState("grid");
+      setSelectedExchange(null);
+      onTransactions([]);
+    } else {
+      onTransactions(updated.flatMap((pf) => pf.transactions));
+    }
+  }
+
+  function handleAddMore() {
+    setState("grid");
+    setSelectedExchange(null);
+  }
+
+  function handlePlainDrop(e: React.DragEvent) {
     e.preventDefault();
-    setIsDragging(false);
     const files = Array.from(e.dataTransfer.files).filter((f) =>
       f.name.endsWith(".csv")
     );
     if (files.length > 0) processFiles(files);
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handlePlainChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     if (files.length > 0) processFiles(files);
     e.target.value = "";
   }
 
-  function removeFile(index: number) {
-    const updated = parsedFiles.filter((_, i) => i !== index);
-    setParsedFiles(updated);
-    onTransactions(updated.flatMap((pf) => pf.transactions));
-  }
-
   return (
     <div className="space-y-4">
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={handleDrop}
-        onClick={() => inputRef.current?.click()}
-        className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 sm:p-10 cursor-pointer transition-colors
-          ${isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/30"}`}
-      >
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".csv"
-          multiple
-          className="hidden"
-          onChange={handleChange}
-        />
-        <p className="text-xs sm:text-sm text-muted-foreground text-center">
-          CSVファイルをドラッグ&ドロップ、またはクリックして選択
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground/60">
-          複数ファイル対応（BitFlyer, Coincheck, Binance 等）
-        </p>
-        {isLoading && (
-          <p className="mt-2 text-sm text-primary">解析中...</p>
-        )}
-      </div>
+      {state === "grid" && (
+        <ExchangeGrid onSelect={handleSelectExchange} onSkip={handleSkip} />
+      )}
 
-      {parsedFiles.length > 0 && (
-        <div className="overflow-x-auto">
-          <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ファイル名</TableHead>
-              <TableHead>取引所</TableHead>
-              <TableHead className="text-right">件数</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {parsedFiles.map((pf, i) => (
-              <TableRow key={i}>
-                <TableCell className="font-medium max-w-[150px] sm:max-w-none truncate">{pf.file.name}</TableCell>
-                <TableCell>
-                  {pf.error ? (
-                    <Badge variant="destructive">エラー</Badge>
-                  ) : (
-                    <Badge>{pf.exchange}</Badge>
-                  )}
-                  {pf.error && (
-                    <span className="ml-2 text-xs text-destructive">
-                      {pf.error}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  {pf.transactions.length.toLocaleString()}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeFile(i);
-                    }}
-                  >
-                    削除
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-          </Table>
+      {state === "upload" && selectedExchange && (
+        <ExchangeUploadDialog
+          exchange={selectedExchange}
+          onBack={handleBack}
+          onFiles={processFiles}
+          isLoading={isLoading}
+        />
+      )}
+
+      {state === "upload" && !selectedExchange && (
+        <div className="space-y-3">
+          <button
+            onClick={handleBack}
+            className="text-sm text-slate-400 hover:text-slate-600"
+          >
+            &larr; 取引所選択に戻る
+          </button>
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handlePlainDrop}
+            onClick={() => plainInputRef.current?.click()}
+            className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 cursor-pointer border-slate-300 hover:border-blue-300 hover:bg-slate-50 transition-colors"
+          >
+            <input
+              ref={plainInputRef}
+              type="file"
+              accept=".csv"
+              multiple
+              className="hidden"
+              onChange={handlePlainChange}
+            />
+            <p className="text-sm text-slate-600">
+              CSVファイルをドラッグ&ドロップ、またはクリック
+            </p>
+            <p className="mt-1 text-xs text-slate-400">
+              取引所は自動検出されます
+            </p>
+            {isLoading && (
+              <p className="mt-2 text-sm text-blue-600">解析中...</p>
+            )}
+          </div>
         </div>
+      )}
+
+      {state === "done" && (
+        <>
+          <UploadSummaryCards
+            files={parsedFiles.map((pf) => ({
+              fileName: pf.fileName,
+              exchange: pf.exchange,
+              transactionCount: pf.transactions.length,
+              error: pf.error,
+            }))}
+            onRemove={handleRemove}
+          />
+          <button
+            onClick={handleAddMore}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            + 別の取引所のCSVを追加
+          </button>
+        </>
       )}
     </div>
   );

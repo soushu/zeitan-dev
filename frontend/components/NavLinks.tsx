@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 
 const links = [
   { href: "/", label: "計算" },
@@ -12,27 +13,50 @@ const links = [
 
 export function NavLinks() {
   const pathname = usePathname();
+  const { user, loading, logout } = useAuth();
   const [open, setOpen] = useState(false);
 
   return (
     <>
       {/* Desktop nav */}
-      <nav className="hidden sm:flex gap-6 text-sm font-medium">
-        {links.map(({ href, label }) => {
-          const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
-          return (
+      <div className="hidden sm:flex items-center gap-6">
+        <nav className="flex gap-6 text-sm font-medium">
+          {links.map(({ href, label }) => {
+            const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`transition-colors hover:text-foreground ${
+                  isActive ? "text-foreground font-semibold" : "text-muted-foreground"
+                }`}
+              >
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+        {!loading && (
+          user ? (
+            <div className="flex items-center gap-3 ml-2 border-l pl-4">
+              <span className="text-xs text-muted-foreground">{user.name || user.email}</span>
+              <button
+                onClick={logout}
+                className="text-xs text-red-500 hover:text-red-700 font-medium"
+              >
+                ログアウト
+              </button>
+            </div>
+          ) : (
             <Link
-              key={href}
-              href={href}
-              className={`transition-colors hover:text-foreground ${
-                isActive ? "text-foreground font-semibold" : "text-muted-foreground"
-              }`}
+              href="/login"
+              className="ml-2 border-l pl-4 text-sm font-medium text-blue-600 hover:text-blue-800"
             >
-              {label}
+              ログイン
             </Link>
-          );
-        })}
-      </nav>
+          )
+        )}
+      </div>
 
       {/* Mobile hamburger */}
       <button
@@ -68,6 +92,27 @@ export function NavLinks() {
                 </Link>
               );
             })}
+            {!loading && (
+              user ? (
+                <div className="px-4 py-3 border-t flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{user.name || user.email}</span>
+                  <button
+                    onClick={() => { logout(); setOpen(false); }}
+                    className="text-xs text-red-500 hover:text-red-700 font-medium"
+                  >
+                    ログアウト
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  className="px-4 py-3 text-sm font-medium text-blue-600 hover:bg-muted border-t"
+                >
+                  ログイン
+                </Link>
+              )
+            )}
           </div>
         </nav>
       )}

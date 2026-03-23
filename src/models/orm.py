@@ -3,10 +3,29 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.utils.database import Base
+
+
+class User(Base):
+    """ユーザーテーブル."""
+
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=func.now(), nullable=False
+    )
+
+    sessions: Mapped[list["CalcSession"]] = relationship(
+        "CalcSession", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class CalcSession(Base):
@@ -15,6 +34,9 @@ class CalcSession(Base):
     __tablename__ = "calc_sessions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("users.id"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), nullable=False
     )
@@ -23,7 +45,8 @@ class CalcSession(Base):
     transaction_count: Mapped[int] = mapped_column(Integer, nullable=False)
     note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # リレーション（cascade: セッション削除時に関連データも削除）
+    # リレーション
+    user: Mapped[Optional["User"]] = relationship("User", back_populates="sessions")
     transactions: Mapped[list["Transaction"]] = relationship(
         "Transaction", back_populates="session", cascade="all, delete-orphan"
     )

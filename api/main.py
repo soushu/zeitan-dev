@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import auth, calculate, dashboard, history, parse, report
+from api.routers import auth, calculate, dashboard, history, parse, portfolio, report
 from src.utils.database import init_db
 
 
@@ -47,6 +47,7 @@ app.include_router(calculate.router, prefix="/api", tags=["calculate"])
 app.include_router(report.router, prefix="/api", tags=["report"])
 app.include_router(history.router, prefix="/api", tags=["history"])
 app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
+app.include_router(portfolio.router, prefix="/api", tags=["portfolio"])
 
 
 @app.get("/")

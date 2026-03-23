@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
   { href: "/dashboard", label: "ダッシュボード" },
+  { href: "/portfolio", label: "ポートフォリオ" },
   { href: "/calculate", label: "アップロード / 計算" },
   { href: "/history", label: "計算履歴" },
 ];

@@ -1,5 +1,9 @@
 """Auth Router - ユーザー認証エンドポイント."""
 
+import os
+import secrets
+
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
@@ -12,6 +16,11 @@ from src.utils.auth import (
     verify_password,
 )
 from src.utils.database import get_db
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 
 router = APIRouter()
 
@@ -100,6 +109,108 @@ async def login(req: LoginRequest, db: Session = Depends(get_db)):
         access_token=token,
         user=UserResponse.model_validate(user),
     )
+
+
+class GoogleCallbackRequest(BaseModel):
+    """Google OAuthコールバックリクエスト."""
+
+    code: str
+    redirect_uri: str
+
+
+@router.post("/auth/google", response_model=AuthResponse)
+async def google_auth(req: GoogleCallbackRequest, db: Session = Depends(get_db)):
+    """Google OAuthでログイン/登録."""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Google認証が設定されていません",
+        )
+
+    # 認可コードをアクセストークンに交換
+    async with httpx.AsyncClient() as client:
+        token_res = await client.post(
+            GOOGLE_TOKEN_URL,
+            data={
+                "code": req.code,
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "redirect_uri": req.redirect_uri,
+                "grant_type": "authorization_code",
+            },
+        )
+
+    if token_res.status_code != 200:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Google認証に失敗しました",
+        )
+
+    token_data = token_res.json()
+    access_token = token_data.get("access_token")
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Googleアクセストークンの取得に失敗しました",
+        )
+
+    # ユーザー情報を取得
+    async with httpx.AsyncClient() as client:
+        userinfo_res = await client.get(
+            GOOGLE_USERINFO_URL,
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
+    if userinfo_res.status_code != 200:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Googleユーザー情報の取得に失敗しました",
+        )
+
+    google_user = userinfo_res.json()
+    email = google_user.get("email")
+    name = google_user.get("name")
+
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Googleアカウントからメールアドレスを取得できませんでした",
+        )
+
+    # 既存ユーザーを検索、なければ作成
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        user = User(
+            email=email,
+            hashed_password=hash_password(secrets.token_urlsafe(32)),
+            name=name,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="このアカウントは無効化されています",
+        )
+
+    token = create_access_token(user.id, user.email)
+    return AuthResponse(
+        access_token=token,
+        user=UserResponse.model_validate(user),
+    )
+
+
+@router.get("/auth/google/client-id")
+async def get_google_client_id():
+    """Google Client IDを返す（フロントエンド用）."""
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Google認証が設定されていません",
+        )
+    return {"client_id": GOOGLE_CLIENT_ID}
 
 
 @router.get("/auth/me", response_model=UserResponse)

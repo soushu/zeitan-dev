@@ -1,5 +1,7 @@
 """Calculate Router."""
 
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -11,8 +13,9 @@ from api.models import (
     TradeResultResponse,
 )
 from src.calculators import MovingAverageCalculator, TotalAverageCalculator
-from src.models.orm import Transaction
+from src.models.orm import Transaction, User
 from src.parsers.base import TransactionFormat
+from src.utils.auth import get_current_user
 from src.utils.database import get_db
 from src.utils.db_service import get_session_detail, save_calculation
 
@@ -24,7 +27,11 @@ router = APIRouter()
     response_model=CalculateResponseWithSession,
     responses={400: {"model": ErrorResponse}},
 )
-async def calculate_tax(request: CalculateRequest, db: Session = Depends(get_db)):
+async def calculate_tax(
+    request: CalculateRequest,
+    db: Session = Depends(get_db),
+    user: Optional[User] = Depends(get_current_user),
+):
     """税金計算を実行する.
 
     Args:
@@ -91,6 +98,7 @@ async def calculate_tax(request: CalculateRequest, db: Session = Depends(get_db)
             results=results,
             total_profit_loss=total_pl,
             calc_method=request.method,
+            user_id=user.id if user else None,
         )
 
         return CalculateResponseWithSession(
@@ -115,6 +123,7 @@ async def recalculate(
     session_id: int,
     request: RecalculateRequest,
     db: Session = Depends(get_db),
+    user: Optional[User] = Depends(get_current_user),
 ):
     """既存セッションの取引データを別の計算方法で再計算する.
 
@@ -179,6 +188,7 @@ async def recalculate(
         results=results,
         total_profit_loss=total_pl,
         calc_method=request.method,
+        user_id=user.id if user else None,
     )
 
     return CalculateResponseWithSession(

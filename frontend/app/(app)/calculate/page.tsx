@@ -112,12 +112,6 @@ export default function Home() {
         </CardHeader>
         <CardContent>
           <FileUploader onTransactions={handleTransactions} />
-          {transactions.length > 0 && (
-            <p className="mt-3 text-sm text-muted-foreground">
-              合計 <strong>{transactions.length.toLocaleString()} 件</strong>{" "}
-              の取引を読み込みました
-            </p>
-          )}
         </CardContent>
       </Card>
 

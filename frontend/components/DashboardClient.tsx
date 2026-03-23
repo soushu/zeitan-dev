@@ -264,7 +264,7 @@ export function DashboardClient() {
       <p className="text-red-500">{error}</p>
       <p className="text-sm text-slate-400 mt-2 mb-4">まずCSVをアップロードして計算を実行してください</p>
       <Link
-        href="/"
+        href="/calculate"
         className="inline-block text-sm font-medium text-blue-600 hover:text-blue-800 border border-blue-300 rounded-lg px-4 py-2 hover:bg-blue-50 transition-colors"
       >
         計算ページへ →

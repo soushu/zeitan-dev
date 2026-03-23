@@ -61,6 +61,23 @@ export async function login(email: string, password: string): Promise<AuthRespon
   return data;
 }
 
+export async function googleAuth(code: string, redirectUri: string): Promise<AuthResponse> {
+  const res = await fetch("/api/auth/google", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code, redirect_uri: redirectUri }),
+  });
+  const data = await handleResponse<AuthResponse>(res);
+  setToken(data.access_token);
+  return data;
+}
+
+export async function getGoogleClientId(): Promise<string> {
+  const res = await fetch("/api/auth/google/client-id");
+  const data = await handleResponse<{ client_id: string }>(res);
+  return data.client_id;
+}
+
 export async function getMe(): Promise<import("./types").UserResponse> {
   const res = await fetch("/api/auth/me", { headers: authHeaders() });
   return handleResponse<import("./types").UserResponse>(res);

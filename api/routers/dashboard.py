@@ -38,7 +38,20 @@ async def get_dashboard(
     else:
         session = db.query(CalcSession).order_by(CalcSession.created_at.desc()).first()
         if session is None:
-            raise HTTPException(status_code=404, detail="計算履歴がありません")
+            # 計算履歴なし → 空レスポンスを返す
+            return DashboardResponse(
+                session_id=0,
+                tax_year=None,
+                calc_method="",
+                total_profit_loss=0,
+                transaction_count=0,
+                sell_count=0,
+                buy_count=0,
+                by_currency=[],
+                by_exchange=[],
+                by_month=[],
+                available_sessions=[],
+            )
 
     # 計算結果レコード取得
     results = (

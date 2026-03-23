@@ -259,19 +259,19 @@ export function DashboardClient() {
   }, [selectedId]);
 
   if (loading) return <p className="text-slate-500 py-12 text-center">読み込み中...</p>;
-  if (error) return (
-    <div className="text-center py-12">
-      <p className="text-red-500">{error}</p>
-      <p className="text-sm text-slate-400 mt-2 mb-4">まずCSVをアップロードして計算を実行してください</p>
+  if (error || !data || data.session_id === 0) return (
+    <div className="text-center py-16">
+      <p className="text-4xl mb-4">📊</p>
+      <p className="text-lg font-medium text-slate-700 mb-2">ダッシュボード</p>
+      <p className="text-sm text-slate-400 mb-6">CSVをアップロードして計算を実行すると、ここに損益サマリーが表示されます</p>
       <Link
         href="/calculate"
-        className="inline-block text-sm font-medium text-blue-600 hover:text-blue-800 border border-blue-300 rounded-lg px-4 py-2 hover:bg-blue-50 transition-colors"
+        className="inline-block text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-lg px-6 py-2.5 transition-colors"
       >
-        計算ページへ →
+        計算を始める
       </Link>
     </div>
   );
-  if (!data) return null;
 
   const isProfit = data.total_profit_loss >= 0;
 

@@ -1,0 +1,14 @@
+[Unit]
+Description=Zeitan Backend (FastAPI)
+After=network.target postgresql.service
+
+[Service]
+User=yutookiguchi
+WorkingDirectory=/home/yutookiguchi/zeitan-dev
+ExecStart=/home/yutookiguchi/zeitan-dev/venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8003
+EnvironmentFile=/home/yutookiguchi/zeitan-dev/.env
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=Zeitan Frontend (Next.js)
+After=network.target zeitan-backend.service
+
+[Service]
+User=yutookiguchi
+WorkingDirectory=/home/yutookiguchi/zeitan-dev/frontend
+ExecStart=/usr/bin/node /home/yutookiguchi/zeitan-dev/frontend/node_modules/.bin/next start -p 3003
+EnvironmentFile=/home/yutookiguchi/zeitan-dev/frontend/.env.local
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

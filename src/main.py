@@ -1,5 +1,6 @@
 """Zeitan - 暗号通貨税金計算アプリ（Streamlit版）."""
 
+import hashlib
 import io
 from pathlib import Path
 
@@ -8,15 +9,30 @@ import streamlit as st
 
 from src.calculators import MovingAverageCalculator, TotalAverageCalculator
 from src.parsers import (
+    AaveParser,
+    BinanceParser,
     BitbankParser,
     BitflyerParser,
+    BlurParser,
+    BybitParser,
+    CoinbaseParser,
     CoincheckParser,
     GMOParser,
+    KrakenParser,
+    LiquidityPoolParser,
     LineBitmaxParser,
+    OpenSeaParser,
     RakutenParser,
     SBIVCParser,
+    UniswapParser,
 )
 from src.parsers.base import BaseParser, TransactionFormat
+from src.reporters import PDFReporter
+from src.utils.database import SessionLocal, init_db
+from src.utils.db_service import get_sessions, save_calculation
+
+# DB 初期化（初回起動時にテーブルを作成する）
+init_db()
 
 # ページ設定
 st.set_page_config(
@@ -33,6 +49,7 @@ st.divider()
 # サイドバー
 with st.sidebar:
     st.header("📊 対応取引所")
+    st.markdown("**🇯🇵 国内取引所**")
     st.markdown(
         """
         - bitFlyer
@@ -44,6 +61,30 @@ with st.sidebar:
         - LINE BITMAX
         """
     )
+    st.markdown("**🌏 海外取引所**")
+    st.markdown(
+        """
+        - Binance
+        - Bybit
+        - Coinbase
+        - Kraken
+        """
+    )
+    st.markdown("**🔗 DeFi**")
+    st.markdown(
+        """
+        - Uniswap
+        - Aave
+        - Liquidity Pool
+        """
+    )
+    st.markdown("**🖼️ NFT**")
+    st.markdown(
+        """
+        - OpenSea
+        - Blur
+        """
+    )
     st.divider()
     st.header("⚙️ 計算方法")
     calc_method = st.radio(
@@ -51,9 +92,30 @@ with st.sidebar:
         options=["移動平均法", "総平均法"],
         help="移動平均法: 購入ごとに平均取得原価を更新\n総平均法: 年間の購入平均を使用",
     )
+    st.divider()
+    st.header("🗂️ 計算履歴")
+    try:
+        _db = SessionLocal()
+        try:
+            _sessions = get_sessions(_db)[:10]
+        finally:
+            _db.close()
+        if _sessions:
+            for _s in _sessions:
+                _label = (
+                    f"{_s.created_at.strftime('%m/%d %H:%M')} "
+                    f"{'移動' if _s.calc_method == 'moving_average' else '総'} "
+                    f"¥{_s.total_profit_loss:,.0f}"
+                )
+                st.button(_label, key=f"hist_{_s.id}", disabled=True)
+        else:
+            st.caption("履歴はありません")
+    except Exception:
+        st.caption("履歴を読み込めませんでした")
 
 # パーサーのマッピング
 PARSERS: dict[str, BaseParser] = {
+    # 国内取引所
     "bitFlyer": BitflyerParser(),
     "Coincheck": CoincheckParser(),
     "GMOコイン": GMOParser(),
@@ -61,6 +123,18 @@ PARSERS: dict[str, BaseParser] = {
     "SBI VCトレード": SBIVCParser(),
     "楽天ウォレット": RakutenParser(),
     "LINE BITMAX": LineBitmaxParser(),
+    # 海外取引所
+    "Binance": BinanceParser(),
+    "Bybit": BybitParser(),
+    "Coinbase (US)": CoinbaseParser(),
+    "Kraken": KrakenParser(),
+    # DeFi
+    "Uniswap": UniswapParser(),
+    "Aave": AaveParser(),
+    "Liquidity Pool": LiquidityPoolParser(),
+    # NFT
+    "OpenSea": OpenSeaParser(),
+    "Blur": BlurParser(),
 }
 
 
@@ -151,6 +225,32 @@ if uploaded_files:
         results = calculator.calculate(all_transactions)
         total_pl = calculator.get_total_profit_loss(results)
 
+        # DB に保存（ファイルセット＋計算方法が同じなら重複保存しない）
+        _calc_method_key = (
+            "moving_average" if calc_method == "移動平均法" else "total_average"
+        )
+        _save_fingerprint = hashlib.md5(
+            str([(fi["ファイル名"], fi["サイズ"]) for fi in file_info]).encode()
+            + _calc_method_key.encode()
+        ).hexdigest()
+        if st.session_state.get("last_db_save_key") != _save_fingerprint:
+            try:
+                _db = SessionLocal()
+                try:
+                    save_calculation(
+                        db=_db,
+                        transactions=all_transactions,
+                        results=results,
+                        total_profit_loss=total_pl,
+                        calc_method=_calc_method_key,
+                    )
+                    st.session_state["last_db_save_key"] = _save_fingerprint
+                    st.toast("計算結果を保存しました", icon="💾")
+                finally:
+                    _db.close()
+            except Exception:
+                pass  # DB 保存失敗はサイレントに無視
+
         # 結果をデータフレームに変換
         df_results = pd.DataFrame(results)
         df_results["取引日時"] = pd.to_datetime(df_results["timestamp"])
@@ -182,10 +282,25 @@ if uploaded_files:
         ]
 
         # 種別を日本語に変換
-        df_display["種別"] = df_display["種別"].map({"buy": "購入", "sell": "売却"})
+        type_mapping = {
+            "buy": "購入",
+            "sell": "売却",
+            "airdrop": "エアドロップ",
+            "fork": "フォーク",
+            "reward": "報酬",
+            "transfer_in": "受取",
+            "transfer_out": "送金",
+            "swap": "スワップ",
+            "liquidity_add": "流動性追加",
+            "liquidity_remove": "流動性削除",
+            "lending": "レンディング",
+            "nft_buy": "NFT購入",
+            "nft_sell": "NFT売却",
+        }
+        df_display["種別"] = df_display["種別"].map(type_mapping)
 
         # 総損益を表示
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric(
                 label="総取引件数",
@@ -202,6 +317,18 @@ if uploaded_files:
             st.metric(
                 label="売却取引件数",
                 value=f"{sell_count} 件",
+            )
+        with col4:
+            # エアドロップ・報酬・フォークの合計所得
+            income_types = ("airdrop", "fork", "reward")
+            income_total = sum(
+                r["profit_loss"] for r in results if r["type"] in income_types
+            )
+            income_count = sum(1 for r in results if r["type"] in income_types)
+            st.metric(
+                label="雑所得（報酬等）",
+                value=f"¥{income_total:,.0f}" if income_count > 0 else "¥0",
+                help=f"エアドロップ・フォーク・報酬による所得 ({income_count}件)",
             )
 
         # 取引履歴を表示
@@ -222,13 +349,32 @@ if uploaded_files:
         df_results.to_csv(csv_buffer, index=False, encoding="utf-8-sig")
         csv_bytes = csv_buffer.getvalue().encode("utf-8-sig")
 
-        st.download_button(
-            label="📥 CSV形式でダウンロード",
-            data=csv_bytes,
-            file_name=f"zeitan_report_{calc_method}.csv",
-            mime="text/csv",
-            help="計算結果をCSV形式でダウンロードします",
-        )
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.download_button(
+                label="📥 CSV形式でダウンロード",
+                data=csv_bytes,
+                file_name=f"zeitan_report_{calc_method}.csv",
+                mime="text/csv",
+                help="計算結果をCSV形式でダウンロードします",
+            )
+
+        with col2:
+            # PDFダウンロード
+            pdf_reporter = PDFReporter()
+            pdf_bytes = pdf_reporter.generate(
+                results=results,
+                total_profit_loss=total_pl,
+                calc_method=calc_method,
+            )
+            st.download_button(
+                label="📄 PDF形式でダウンロード",
+                data=pdf_bytes,
+                file_name=f"zeitan_report_{calc_method}.pdf",
+                mime="application/pdf",
+                help="計算結果をPDF形式でダウンロードします（サマリー付き）",
+            )
 
         # サマリー情報
         st.subheader("📊 サマリー")
@@ -251,4 +397,4 @@ else:
 
 # フッター
 st.divider()
-st.caption("Zeitan v1.0 - Phase 1 MVP | 対応: 移動平均法・総平均法 | 対応取引所: 7社")
+st.caption("Zeitan v1.0 | 対応: 移動平均法・総平均法 | 取引所: 11社 + DeFi 3 + NFT 2")

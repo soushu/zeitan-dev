@@ -29,9 +29,15 @@ data/reports/*
 !data/uploads/.gitkeep
 !data/reports/.gitkeep
 
+# Database
+*.db
+
 # Environment
 .env
 .env.local
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node.js
+node_modules/

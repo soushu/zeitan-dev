@@ -6,10 +6,14 @@ from pathlib import Path
 import pytest
 
 from src.parsers import (
+    BinanceParser,
     BitbankParser,
     BitflyerParser,
+    BybitParser,
+    CoinbaseParser,
     CoincheckParser,
     GMOParser,
+    KrakenParser,
     LineBitmaxParser,
     RakutenParser,
     SBIVCParser,
@@ -472,3 +476,203 @@ class TestLineBitmaxParser:
         assert first["price"] == 5000000.0
         assert first["fee"] == 50.0
         assert first["timestamp"].year == 2024 and first["timestamp"].month == 1
+
+
+class TestBinanceParser:
+    """BinanceParser のテスト."""
+
+    def test_exchange_name(self) -> None:
+        """取引所名が正しいこと."""
+        parser = BinanceParser()
+        assert parser.exchange_name == "binance"
+
+    def test_validate_ok(self) -> None:
+        """正しいBinance CSVを検証できること."""
+        parser = BinanceParser()
+        path = FIXTURES_DIR / "sample_binance.csv"
+        assert parser.validate(path) is True
+
+    def test_validate_file_not_found(self) -> None:
+        """存在しないファイルでエラーが発生すること."""
+        parser = BinanceParser()
+        with pytest.raises(FileNotFoundError):
+            parser.parse("nonexistent.csv")
+
+    def test_parse_returns_standard_format(self) -> None:
+        """パース結果が標準フォーマットを満たすこと."""
+        parser = BinanceParser()
+        path = FIXTURES_DIR / "sample_binance.csv"
+        result = parser.parse(path)
+        assert isinstance(result, list)
+        assert len(result) > 0
+
+        for row in result:
+            assert "timestamp" in row
+            assert "exchange" in row
+            assert "symbol" in row
+            assert "type" in row
+            assert "amount" in row
+            assert "price" in row
+            assert "fee" in row
+
+    def test_parse_values(self) -> None:
+        """サンプルCSVの1行目が正しくパースされること."""
+        parser = BinanceParser()
+        path = FIXTURES_DIR / "sample_binance.csv"
+        result = parser.parse(path)
+        first = result[0]
+        assert first["type"] == "buy"
+        assert first["symbol"] == "BTC/USDT"
+        assert first["amount"] == 0.5
+        assert first["price"] == 42000.0
+        assert first["fee"] == 10.5
+
+
+class TestCoinbaseParser:
+    """CoinbaseParser のテスト."""
+
+    def test_exchange_name(self) -> None:
+        """取引所名が正しいこと."""
+        parser = CoinbaseParser()
+        assert parser.exchange_name == "coinbase"
+
+    def test_validate_ok(self) -> None:
+        """正しいCoinbase CSVを検証できること."""
+        parser = CoinbaseParser()
+        path = FIXTURES_DIR / "sample_coinbase.csv"
+        assert parser.validate(path) is True
+
+    def test_validate_file_not_found(self) -> None:
+        """存在しないファイルでエラーが発生すること."""
+        parser = CoinbaseParser()
+        with pytest.raises(FileNotFoundError):
+            parser.parse("nonexistent.csv")
+
+    def test_parse_returns_standard_format(self) -> None:
+        """パース結果が標準フォーマットを満たすこと."""
+        parser = CoinbaseParser()
+        path = FIXTURES_DIR / "sample_coinbase.csv"
+        result = parser.parse(path)
+        assert isinstance(result, list)
+        assert len(result) > 0
+
+        for row in result:
+            assert "timestamp" in row
+            assert "exchange" in row
+            assert "symbol" in row
+            assert "type" in row
+            assert "amount" in row
+            assert "price" in row
+            assert "fee" in row
+
+    def test_parse_values(self) -> None:
+        """サンプルCSVの1行目が正しくパースされること."""
+        parser = CoinbaseParser()
+        path = FIXTURES_DIR / "sample_coinbase.csv"
+        result = parser.parse(path)
+        first = result[0]
+        assert first["type"] == "buy"
+        assert first["symbol"] == "BTC/USD"
+        assert first["amount"] == 0.5
+        assert first["price"] == 42000.0
+        assert first["fee"] == 50.0
+
+
+class TestKrakenParser:
+    """KrakenParser のテスト."""
+
+    def test_exchange_name(self) -> None:
+        """取引所名が正しいこと."""
+        parser = KrakenParser()
+        assert parser.exchange_name == "kraken"
+
+    def test_validate_ok(self) -> None:
+        """正しいKraken CSVを検証できること."""
+        parser = KrakenParser()
+        path = FIXTURES_DIR / "sample_kraken.csv"
+        assert parser.validate(path) is True
+
+    def test_validate_file_not_found(self) -> None:
+        """存在しないファイルでエラーが発生すること."""
+        parser = KrakenParser()
+        with pytest.raises(FileNotFoundError):
+            parser.parse("nonexistent.csv")
+
+    def test_parse_returns_standard_format(self) -> None:
+        """パース結果が標準フォーマットを満たすこと."""
+        parser = KrakenParser()
+        path = FIXTURES_DIR / "sample_kraken.csv"
+        result = parser.parse(path)
+        assert isinstance(result, list)
+        assert len(result) > 0
+
+        for row in result:
+            assert "timestamp" in row
+            assert "exchange" in row
+            assert "symbol" in row
+            assert "type" in row
+            assert "amount" in row
+            assert "price" in row
+            assert "fee" in row
+
+    def test_parse_values(self) -> None:
+        """サンプルCSVの1行目が正しくパースされること."""
+        parser = KrakenParser()
+        path = FIXTURES_DIR / "sample_kraken.csv"
+        result = parser.parse(path)
+        first = result[0]
+        assert first["type"] == "buy"
+        assert first["symbol"] == "BTC/USD"
+        assert first["amount"] == 0.5
+        assert first["price"] == 42000.0
+        assert first["fee"] == 25.0
+
+
+class TestBybitParser:
+    """BybitParser のテスト."""
+
+    def test_exchange_name(self) -> None:
+        """取引所名が正しいこと."""
+        parser = BybitParser()
+        assert parser.exchange_name == "bybit"
+
+    def test_validate_ok(self) -> None:
+        """正しいBybit CSVを検証できること."""
+        parser = BybitParser()
+        path = FIXTURES_DIR / "sample_bybit.csv"
+        assert parser.validate(path) is True
+
+    def test_validate_file_not_found(self) -> None:
+        """存在しないファイルでエラーが発生すること."""
+        parser = BybitParser()
+        with pytest.raises(FileNotFoundError):
+            parser.parse("nonexistent.csv")
+
+    def test_parse_returns_standard_format(self) -> None:
+        """パース結果が標準フォーマットを満たすこと."""
+        parser = BybitParser()
+        path = FIXTURES_DIR / "sample_bybit.csv"
+        result = parser.parse(path)
+        assert isinstance(result, list)
+        assert len(result) > 0
+
+        for row in result:
+            assert "timestamp" in row
+            assert "exchange" in row
+            assert "symbol" in row
+            assert "type" in row
+            assert "amount" in row
+            assert "price" in row
+            assert "fee" in row
+
+    def test_parse_values(self) -> None:
+        """サンプルCSVの1行目が正しくパースされること."""
+        parser = BybitParser()
+        path = FIXTURES_DIR / "sample_bybit.csv"
+        result = parser.parse(path)
+        first = result[0]
+        assert first["type"] == "buy"
+        assert first["symbol"] == "BTC/USDT"
+        assert first["amount"] == 0.5
+        assert first["price"] == 43000.0
+        assert first["fee"] == 10.75

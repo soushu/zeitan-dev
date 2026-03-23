@@ -1,0 +1,4 @@
+Timestamp,Transaction Type,Asset,Quantity Transacted,Spot Price Currency,Spot Price at Transaction,Fees and/or Spread
+2024-01-15T10:30:00Z,Buy,BTC,0.5,USD,42000.00,50.00
+2024-02-20T14:15:00Z,Buy,ETH,5.0,USD,2500.00,30.00
+2024-03-10T09:45:00Z,Sell,BTC,0.5,USD,48000.00,60.00

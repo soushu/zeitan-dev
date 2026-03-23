@@ -26,7 +26,7 @@ export default function LoginPage() {
         ? await register(email, password, name || undefined)
         : await login(email, password);
       setUser(res.user);
-      router.push("/");
+      router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "エラーが発生しました");
     } finally {

@@ -41,3 +41,4 @@ data/reports/*
 
 # Node.js
 node_modules/
+.playwright-mcp/

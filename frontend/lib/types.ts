@@ -99,6 +99,18 @@ export interface AlertsResponse {
   has_warnings: boolean;
 }
 
+export interface UserResponse {
+  id: number;
+  email: string;
+  name: string | null;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user: UserResponse;
+}
+
 export interface DashboardData {
   session_id: number;
   tax_year: number | null;

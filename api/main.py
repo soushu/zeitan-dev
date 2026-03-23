@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import calculate, dashboard, history, parse, report
+from api.routers import auth, calculate, dashboard, history, parse, report
 from src.utils.database import init_db
 
 
@@ -34,13 +34,14 @@ _allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
 # ルーター登録
+app.include_router(auth.router, prefix="/api", tags=["auth"])
 app.include_router(parse.router, prefix="/api", tags=["parse"])
 app.include_router(calculate.router, prefix="/api", tags=["calculate"])
 app.include_router(report.router, prefix="/api", tags=["report"])

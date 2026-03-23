@@ -11,6 +11,7 @@ def save_calculation(
     results: list[dict],
     total_profit_loss: float,
     calc_method: str,
+    user_id: int | None = None,
 ) -> CalcSession:
     """計算結果を DB に保存して CalcSession を返す.
 
@@ -25,6 +26,7 @@ def save_calculation(
         保存された CalcSession。
     """
     session = CalcSession(
+        user_id=user_id,
         calc_method=calc_method,
         total_profit_loss=total_profit_loss,
         transaction_count=len(transactions),
@@ -68,11 +70,12 @@ def save_calculation(
     return session
 
 
-def get_sessions(db: Session) -> list[CalcSession]:
-    """全セッションを新しい順で返す."""
-    return (
-        db.query(CalcSession).order_by(CalcSession.created_at.desc()).all()
-    )
+def get_sessions(db: Session, user_id: int | None = None) -> list[CalcSession]:
+    """セッションを新しい順で返す。user_id指定時はそのユーザーのみ."""
+    query = db.query(CalcSession)
+    if user_id is not None:
+        query = query.filter(CalcSession.user_id == user_id)
+    return query.order_by(CalcSession.created_at.desc()).all()
 
 
 def get_session_detail(db: Session, session_id: int) -> CalcSession | None:

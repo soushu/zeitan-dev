@@ -8,6 +8,7 @@
 
 ## Feedback
 - [feedback_git_rules.md](feedback_git_rules.md) - Git ブランチ運用ルール（main/develop/feature）
+- [feedback_dev_workflow.md](feedback_dev_workflow.md) - 開発フロー方針（実装→ブラウザ確認→修正ループ、マージはユーザー指示待ち）
 - [feedback_test_conventions.md](feedback_test_conventions.md) - テスト実行方法・規約
 
 ## User

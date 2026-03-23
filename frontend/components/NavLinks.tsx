@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 
 const links = [
-  { href: "/", label: "計算" },
   { href: "/dashboard", label: "ダッシュボード" },
+  { href: "/calculate", label: "計算" },
   { href: "/history", label: "履歴" },
 ];
 
@@ -22,7 +22,7 @@ export function NavLinks() {
       <div className="hidden sm:flex items-center gap-6">
         <nav className="flex gap-6 text-sm font-medium">
           {links.map(({ href, label }) => {
-            const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
+            const isActive = pathname === href || pathname.startsWith(href + "/");
             return (
               <Link
                 key={href}
@@ -78,7 +78,7 @@ export function NavLinks() {
         <nav className="sm:hidden absolute top-full left-0 right-0 bg-background border-b shadow-md z-50">
           <div className="flex flex-col py-2">
             {links.map(({ href, label }) => {
-              const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
+              const isActive = pathname === href || pathname.startsWith(href + "/");
               return (
                 <Link
                   key={href}

@@ -1,9 +1,5 @@
 import { HistoryList } from "@/components/HistoryList";
 
-export const metadata = {
-  title: "計算履歴 | Zeitan",
-};
-
 export default function HistoryPage() {
   return (
     <div className="space-y-6">

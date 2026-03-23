@@ -109,7 +109,7 @@ export function PortfolioClient() {
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: number) => [formatJPY(value), "評価額"]}
+                formatter={(value: number | undefined) => [value != null ? formatJPY(value) : "－", "評価額"]}
                 contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}
               />
               <Legend

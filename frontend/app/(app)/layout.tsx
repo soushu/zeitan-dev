@@ -2,9 +2,9 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { NavLinks } from "@/components/NavLinks";
+import { AppSidebar } from "@/components/AppSidebar";
+import { MobileHeader } from "@/components/MobileHeader";
 
 export default function AppLayout({
   children,
@@ -29,18 +29,14 @@ export default function AppLayout({
   if (!user) return null;
 
   return (
-    <>
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
-        <div className="relative mx-auto flex h-12 sm:h-14 max-w-5xl items-center justify-between px-4">
-          <Link href="/dashboard" className="text-base sm:text-lg font-bold tracking-tight">
-            Zeitan
-          </Link>
-          <NavLinks />
-        </div>
-      </header>
-      <main className="mx-auto max-w-5xl px-3 sm:px-4 py-4 sm:py-8">
-        {children}
-      </main>
-    </>
+    <div className="flex min-h-screen">
+      <AppSidebar />
+      <div className="flex-1 flex flex-col min-w-0">
+        <MobileHeader />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-5xl w-full mx-auto">
+          {children}
+        </main>
+      </div>
+    </div>
   );
 }

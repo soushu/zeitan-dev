@@ -132,6 +132,11 @@ export async function getAvailableYears(): Promise<number[]> {
   return handleResponse<number[]>(res);
 }
 
+export async function getPortfolio(): Promise<import("./types").PortfolioData> {
+  const res = await fetch("/api/portfolio", { headers: authHeaders() });
+  return handleResponse<import("./types").PortfolioData>(res);
+}
+
 export async function getSessionDetail(id: number): Promise<SessionDetail> {
   const res = await fetch(`/api/history/${id}`, { headers: authHeaders() });
   return handleResponse<SessionDetail>(res);

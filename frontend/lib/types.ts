@@ -111,6 +111,26 @@ export interface AuthResponse {
   user: UserResponse;
 }
 
+export interface CurrencyHolding {
+  symbol: string;
+  amount: number;
+  average_cost: number;
+  last_price: number;
+  current_value: number;
+  cost_basis: number;
+  unrealized_pnl: number;
+  allocation_pct: number;
+}
+
+export interface PortfolioData {
+  total_value: number;
+  total_cost: number;
+  unrealized_pnl: number;
+  holdings: CurrencyHolding[];
+  session_id: number | null;
+  calc_method: string | null;
+}
+
 export interface DashboardData {
   session_id: number;
   tax_year: number | null;
